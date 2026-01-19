@@ -64,7 +64,8 @@ dependencies {
     implementation("io.coil-kt:coil:2.5.0")
 
     // Shizuku
-    val shizuku_version = "13.5.4"
+    val shizuku_version = "13.1.5"
     implementation("dev.rikka.shizuku:api:$shizuku_version")
+    implementation("dev.rikka.shizuku:provider:$shizuku_version")
     implementation("dev.rikka.shizuku:provider:$shizuku_version")
 }
