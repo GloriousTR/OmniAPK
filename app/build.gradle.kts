@@ -62,4 +62,9 @@ dependencies {
 
     // Image Loading
     implementation("io.coil-kt:coil:2.5.0")
+
+    // Shizuku
+    val shizuku_version = "13.5.4"
+    implementation("dev.rikka.shizuku:api:$shizuku_version")
+    implementation("dev.rikka.shizuku:provider:$shizuku_version")
 }
