@@ -11,7 +11,7 @@
 
     <TextView android:id="@+id/tvVersion" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="16dp" android:layout_marginTop="4dp" android:text="Version: 1.0.0" android:textSize="14sp" app:layout_constraintStart_toEndOf="@id/ivAppIcon" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintTop_toBottomOf="@id/tvPackageName"/>
 
-    <Button android:id="@+id/btnInstall" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginTop="32dp" android:text="Download & Install" app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintTop_toBottomOf="@id/ivAppIcon"/>
+    <Button android:id="@+id/btnInstall" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginTop="32dp" android:text="Download &amp; Install" app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintTop_toBottomOf="@id/ivAppIcon"/>
 
     <ProgressBar android:id="@+id/progressBar" style="?android:attr/progressBarStyleHorizontal" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginTop="16dp" android:indeterminate="true" android:visibility="gone" app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintTop_toBottomOf="@id/btnInstall"/>
 
