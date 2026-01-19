@@ -78,7 +78,7 @@ jobs:
         sed -i "s/versionName = \"1.0\"/versionName = \"$VERSION\"/g" app/build.gradle.kts
 
     - name: Build Debug APK
-      run: ./gradlew assembleDebug --stacktrace
+      run: gradle assembleDebug --stacktrace
 
     - name: Rename APK
       env: 
