@@ -76,9 +76,12 @@ jobs:
         # Update Kotlin DSL build script
         sed -i "s/versionCode = 1/versionCode = $VERSION_CODE/g" app/build.gradle.kts
         sed -i "s/versionName = \"1.0\"/versionName = \"$VERSION\"/g" app/build.gradle.kts
+        
+        # Verify content
+        cat app/build.gradle.kts
 
     - name: Build Debug APK
-      run: gradle assembleDebug --stacktrace
+      run: gradle assembleDebug --stacktrace --no-configuration-cache
 
     - name: Rename APK
       env: 
