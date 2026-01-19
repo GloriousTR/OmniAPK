@@ -81,7 +81,7 @@ jobs:
         cat app/build.gradle.kts
 
     - name: Build Debug APK
-      run: gradle assembleDebug --stacktrace --no-configuration-cache
+      run: gradle clean assembleDebug --stacktrace --no-configuration-cache
 
     - name: Rename APK
       env: 
