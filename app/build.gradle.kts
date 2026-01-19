@@ -60,6 +60,9 @@ dependencies {
     // Lifecycle
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0")
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.7.0")
+    
+    // Fragments
+    implementation("androidx.fragment:fragment-ktx:1.6.2")
 
     // Networking & Scraping
     implementation("com.squareup.retrofit2:retrofit:2.9.0")

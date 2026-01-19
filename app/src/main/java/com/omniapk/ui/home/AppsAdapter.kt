@@ -28,7 +28,8 @@ class AppsAdapter(
         fun bind(appInfo: AppInfo) {
             binding.tvAppName.text = appInfo.name
             binding.tvPackageName.text = appInfo.packageName
-            binding.ivAppIcon.setImageDrawable(appInfo.icon) // Note: This might need Coil for URLs in search results
+            binding.tvVersion.text = "v${appInfo.versionName}"
+            binding.ivAppIcon.setImageDrawable(appInfo.icon)
             
             itemView.setOnClickListener { onItemClick(appInfo) }
         }

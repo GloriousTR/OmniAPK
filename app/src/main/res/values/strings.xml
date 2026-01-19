@@ -1,3 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">OmniAPK</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">Ana Sayfa</string>
+    <string name="nav_updates">Güncellemeler</string>
+    <string name="nav_search">Ara</string>
+    <string name="nav_settings">Ayarlar</string>
+
+    <!-- Home Screen -->
+    <string name="installed_apps">Yüklü Uygulamalar</string>
+    <string name="no_apps_found">Uygulama bulunamadı</string>
+    <string name="loading">Yükleniyor...</string>
+    <string name="app_count">%d uygulama</string>
+
+    <!-- Search -->
+    <string name="search_hint">Uygulama ara...</string>
+    <string name="search_results">Arama Sonuçları</string>
+    <string name="no_results">Sonuç bulunamadı</string>
+
+    <!-- Updates -->
+    <string name="updates_available">Güncellemeler Mevcut</string>
+    <string name="no_updates">Tüm uygulamalar güncel</string>
+    <string name="update_all">Tümünü Güncelle</string>
+
+    <!-- App Details -->
+    <string name="version">Versiyon: %s</string>
+    <string name="package_name">Paket: %s</string>
+    <string name="download">İndir</string>
+    <string name="install">Kur</string>
+    <string name="update">Güncelle</string>
+    <string name="open">Aç</string>
+    <string name="uninstall">Kaldır</string>
+
+    <!-- Settings -->
+    <string name="settings_theme">Tema</string>
+    <string name="settings_sources">Kaynaklar</string>
+    <string name="settings_about">Hakkında</string>
+    <string name="settings_version">Uygulama Versiyonu</string>
+
+    <!-- General -->
+    <string name="error">Hata</string>
+    <string name="retry">Tekrar Dene</string>
+    <string name="cancel">İptal</string>
+    <string name="ok">Tamam</string>
 </resources>
