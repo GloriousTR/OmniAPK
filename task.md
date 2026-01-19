@@ -1,0 +1,28 @@
+# Universal App Manager (OmniAPK) - Task List
+
+- [/] Project Planning and Architecture Design <!-- id: 0 -->
+    - [x] Analyze requirements <!-- id: 1 -->
+    - [x] Create implementation plan <!-- id: 2 -->
+    - [x] Define architecture (MVVM, Clean Architecture) <!-- id: 3 -->
+- [x] Project Setup & CI/CD <!-- id: 4 -->
+    - [x] Initialize Android Project Structure (Gradle, Kotlin) <!-- id: 5 -->
+    - [x] **Create GitHub Actions Workflow for APK Build** <!-- id: 6 -->
+    - [x] Setup dependencies (Retrofit, Jsoup, Coroutines, Hilt) <!-- id: 7 -->
+- [ ] Core Module: App Management <!-- id: 8 -->
+    - [ ] Implement PackageManagerHelper to fetch installed apps <!-- id: 9 -->
+    - [ ] Create data model for AppInfo <!-- id: 10 -->
+- [ ] Core Module: Source Integration (Scraping/API) <!-- id: 11 -->
+    - [ ] Design SourceProvider Interface <!-- id: 12 -->
+    - [ ] Implement APKMirror Source <!-- id: 13 -->
+    - [ ] Implement APKPure Source <!-- id: 14 -->
+    - [ ] Implement Play Store Version Checker (Jsoup) <!-- id: 15 -->
+- [ ] UI/UX Implementation <!-- id: 16 -->
+    - [ ] Create Home Screen (Installed Apps List) <!-- id: 17 -->
+    - [ ] Create Update Check Flow <!-- id: 18 -->
+    - [ ] Create Search/Install Screen <!-- id: 19 -->
+- [ ] Download & Install Manager <!-- id: 20 -->
+    - [ ] Implement DownloadService <!-- id: 21 -->
+    - [ ] Implement APK Installer (PackageInstaller API) <!-- id: 22 -->
+- [ ] Verification & Testing <!-- id: 23 -->
+    - [ ] Verify scraping logic <!-- id: 24 -->
+    - [ ] **Verify APK build artifacts specifically via GitHub Actions** <!-- id: 25 -->
