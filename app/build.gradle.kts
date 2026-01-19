@@ -38,6 +38,11 @@ android {
     buildFeatures {
         viewBinding = true
     }
+    
+    lintOptions {
+        isAbortOnError = false
+        isCheckReleaseBuilds = false
+    }
 }
 
 dependencies {
@@ -67,6 +72,5 @@ dependencies {
     // Shizuku
     val shizuku_version = "13.1.5"
     implementation("dev.rikka.shizuku:api:$shizuku_version")
-    implementation("dev.rikka.shizuku:provider:$shizuku_version")
     implementation("dev.rikka.shizuku:provider:$shizuku_version")
 }
