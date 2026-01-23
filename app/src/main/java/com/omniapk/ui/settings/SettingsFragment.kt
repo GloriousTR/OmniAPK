@@ -8,10 +8,12 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.firebase.auth.FirebaseUser
 import com.omniapk.BuildConfig
 import com.omniapk.auth.GoogleAuthManager
+import com.omniapk.data.model.FDroidRepo
 import com.omniapk.databinding.FragmentSettingsBinding
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
@@ -24,6 +26,9 @@ class SettingsFragment : Fragment() {
     
     @Inject
     lateinit var authManager: GoogleAuthManager
+    
+    private lateinit var repoAdapter: FDroidRepoAdapter
+    private val repos = FDroidRepo.DEFAULT_REPOS.toMutableList()
     
     private val signInLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -55,6 +60,7 @@ class SettingsFragment : Fragment() {
         binding.tvVersion.text = "Versiyon: ${BuildConfig.VERSION_NAME}"
         
         setupClickListeners()
+        setupReposList()
         updateUI(authManager.getCurrentUser())
     }
     
@@ -69,6 +75,20 @@ class SettingsFragment : Fragment() {
                 Toast.makeText(requireContext(), "Çıkış yapıldı", Toast.LENGTH_SHORT).show()
             }
         }
+    }
+    
+    private fun setupReposList() {
+        repoAdapter = FDroidRepoAdapter(repos) { repo, enabled ->
+            // Update repo enabled state
+            val index = repos.indexOfFirst { it.id == repo.id }
+            if (index >= 0) {
+                repos[index] = repo.copy(enabled = enabled)
+                // TODO: Save to preferences
+            }
+        }
+        
+        binding.rvRepos.layoutManager = LinearLayoutManager(requireContext())
+        binding.rvRepos.adapter = repoAdapter
     }
     
     private fun updateUI(user: FirebaseUser?) {
