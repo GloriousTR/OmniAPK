@@ -56,4 +56,10 @@
         <item name="android:textColor">@color/text_primary</item>
         <item name="android:textColorHint">@color/text_hint</item>
     </style>
+
+    <!-- Rounded ImageView Style -->
+    <style name="Widget.OmniAPK.RoundedImageView" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">12dp</item>
+    </style>
 </resources>

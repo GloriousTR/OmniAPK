@@ -1,48 +1,91 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent" android:layout_height="match_parent" android:background="@color/background" android:fillViewport="true">
+    xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent" android:layout_height="match_parent" android:background="@color/background">
 
-    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp">
+    <com.google.android.material.appbar.AppBarLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:background="@android:color/transparent" app:elevation="0dp">
 
-        <!-- App Header -->
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+        <androidx.appcompat.widget.Toolbar android:id="@+id/toolbar" android:layout_width="match_parent" android:layout_height="?attr/actionBarSize" app:navigationIcon="@drawable/ic_arrow_back" app:title="" />
 
-            <ImageView android:id="@+id/ivAppIcon" android:layout_width="80dp" android:layout_height="80dp" android:contentDescription="App Icon" tools:srcCompat="@android:drawable/sym_def_app_icon"/>
+    </com.google.android.material.appbar.AppBarLayout>
 
-            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="16dp" android:orientation="vertical">
+    <androidx.core.widget.NestedScrollView android:layout_width="match_parent" android:layout_height="match_parent" app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
-                <TextView android:id="@+id/tvAppName" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="App Name" android:textColor="@color/text_primary" android:textSize="20sp" android:textStyle="bold"/>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:paddingBottom="24dp">
 
-                <TextView android:id="@+id/tvPackageName" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="com.example.app" android:textColor="@color/text_secondary" android:textSize="12sp"/>
+            <!-- Header Section -->
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:padding="16dp">
 
-                <TextView android:id="@+id/tvVersion" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:text="Versiyon: 1.0.0" android:textColor="@color/text_secondary" android:textSize="12sp"/>
+                <com.google.android.material.imageview.ShapeableImageView android:id="@+id/ivAppIcon" android:layout_width="84dp" android:layout_height="84dp" android:src="@android:drawable/sym_def_app_icon" app:shapeAppearanceOverlay="@style/Widget.OmniAPK.RoundedImageView" />
+
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginStart="16dp" android:layout_gravity="center_vertical" android:orientation="vertical">
+
+                    <TextView android:id="@+id/tvAppName" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="App Name" android:textColor="@color/text_primary" android:textSize="22sp" android:textStyle="bold" />
+
+                    <TextView android:id="@+id/tvDeveloper" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="Developer Name" android:textColor="@color/primary" android:textSize="14sp" />
+
+                    <TextView android:id="@+id/tvVersion" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:text="v1.0.0" android:textColor="@color/text_secondary" android:textSize="12sp" />
+
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Stats Row -->
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginHorizontal="16dp" android:layout_marginBottom="16dp" android:baselineAligned="false" android:orientation="horizontal">
+
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:orientation="vertical">
+
+                    <TextView android:id="@+id/tvRating" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="4.5 ★" android:textColor="@color/text_primary" android:textStyle="bold" />
+
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Rating" android:textColor="@color/text_secondary" android:textSize="12sp" />
+                </LinearLayout>
+
+                <View android:layout_width="1dp" android:layout_height="match_parent" android:background="@color/divider" />
+
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:orientation="vertical">
+
+                    <TextView android:id="@+id/tvDownloads" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="1M+" android:textColor="@color/text_primary" android:textStyle="bold" />
+
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Downloads" android:textColor="@color/text_secondary" android:textSize="12sp" />
+                </LinearLayout>
+
+                <View android:layout_width="1dp" android:layout_height="match_parent" android:background="@color/divider" />
+
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:orientation="vertical">
+
+                    <TextView android:id="@+id/tvSize" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="25 MB" android:textColor="@color/text_primary" android:textStyle="bold" />
+
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Size" android:textColor="@color/text_secondary" android:textSize="12sp" />
+                </LinearLayout>
 
             </LinearLayout>
 
+            <!-- Action Buttons -->
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:paddingHorizontal="16dp" android:paddingBottom="16dp">
+
+                <com.google.android.material.button.MaterialButton android:id="@+id/btnInstall" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginEnd="8dp" android:text="Install" app:cornerRadius="24dp" />
+
+                <com.google.android.material.button.MaterialButton android:id="@+id/btnManualDownload" style="@style/Widget.Material3.Button.OutlinedButton" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Versions" app:icon="@drawable/ic_arrow_down" app:cornerRadius="24dp" />
+                <!-- Note: ic_arrow_down might need to be created if not exists. Using no icon or standard one if fails -->
+
+            </LinearLayout>
+
+            <!-- Screenshots -->
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="16dp" android:layout_marginBottom="8dp" android:text="Screenshots" android:textColor="@color/text_primary" android:textSize="18sp" android:textStyle="bold" />
+
+            <androidx.recyclerview.widget.RecyclerView android:id="@+id/rvScreenshots" android:layout_width="match_parent" android:layout_height="wrap_content" android:clipToPadding="false" android:paddingStart="16dp" android:paddingEnd="4dp" android:orientation="horizontal" app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" tools:listitem="@layout/item_screenshot" />
+
+            <!-- Description -->
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginHorizontal="16dp" android:layout_marginTop="24dp" android:layout_marginBottom="8dp" android:text="About this app" android:textColor="@color/text_primary" android:textSize="18sp" android:textStyle="bold" />
+
+            <TextView android:id="@+id/tvDescription" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginHorizontal="16dp" android:ellipsize="end" android:maxLines="4" android:text="Description goes here..." android:textColor="@color/text_secondary" android:lineSpacingExtra="4dp" />
+
+            <TextView android:id="@+id/tvReadMore" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginHorizontal="16dp" android:layout_marginTop="4dp" android:text="Read More" android:textColor="@color/primary" android:textStyle="bold" />
+
+            <!-- Progress Bar (Overlay or Bottom) -->
+            <ProgressBar android:id="@+id/progressBar" style="?android:attr/progressBarStyleHorizontal" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginHorizontal="16dp" android:layout_marginTop="16dp" android:indeterminate="true" android:visibility="gone" />
+
+            <TextView android:id="@+id/tvStatus" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginHorizontal="16dp" android:layout_marginTop="8dp" android:gravity="center" android:text="" android:textColor="@color/text_secondary" />
+
         </LinearLayout>
-
-        <!-- Description -->
-        <TextView android:id="@+id/tvDescription" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16dp" android:text="Uygulama açıklaması..." android:textColor="@color/text_secondary" android:textSize="14sp" android:visibility="gone"/>
-
-        <!-- Download Options Title -->
-        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="24dp" android:text="İndirme Seçenekleri" android:textColor="@color/text_primary" android:textSize="16sp" android:textStyle="bold"/>
-
-        <!-- Download via APKMirror -->
-        <com.google.android.material.button.MaterialButton android:id="@+id/btnDownloadApkMirror" style="@style/Widget.Material3.Button.OutlinedButton" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:text="Download via APKMirror" android:textColor="@color/text_primary" app:strokeColor="@color/accent" app:cornerRadius="8dp"/>
-
-        <!-- Download via APKPure -->
-        <com.google.android.material.button.MaterialButton android:id="@+id/btnDownloadApkPure" style="@style/Widget.Material3.Button.OutlinedButton" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="Download via APKPure" android:textColor="@color/text_primary" app:strokeColor="@color/accent" app:cornerRadius="8dp"/>
-
-        <!-- Download via F-Droid -->
-        <com.google.android.material.button.MaterialButton android:id="@+id/btnDownloadFDroid" style="@style/Widget.Material3.Button.OutlinedButton" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="Download via F-Droid" android:textColor="@color/text_primary" app:strokeColor="@color/accent" app:cornerRadius="8dp" android:visibility="gone"/>
-
-        <!-- Progress -->
-        <ProgressBar android:id="@+id/progressBar" style="?android:attr/progressBarStyleHorizontal" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16dp" android:indeterminate="true" android:visibility="gone"/>
-
-        <!-- Status -->
-        <TextView android:id="@+id/tvStatus" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:layout_gravity="center" android:text="" android:textColor="@color/text_secondary" android:textSize="14sp"/>
-
-    </LinearLayout>
-
-</ScrollView>
+    </androidx.core.widget.NestedScrollView>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

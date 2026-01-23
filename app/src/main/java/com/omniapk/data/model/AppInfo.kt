@@ -13,5 +13,9 @@ data class AppInfo(
     val isGame: Boolean = false,
     val source: String? = null,
     val description: String? = null,
-    val category: Int = 0
+    val category: Int = 0,
+    val screenshots: List<String> = emptyList(),
+    val rating: Double = 0.0,
+    val downloads: String = "",
+    val size: String = ""
 )

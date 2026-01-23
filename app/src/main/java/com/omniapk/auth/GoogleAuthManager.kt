@@ -45,8 +45,10 @@ class GoogleAuthManager @Inject constructor(
     fun handleSignInResult(task: Task<GoogleSignInAccount>, onSuccess: (FirebaseUser) -> Unit, onError: (Exception) -> Unit) {
         try {
             val account = task.getResult(ApiException::class.java)
+            android.util.Log.d("GoogleAuth", "Firebase Auth with Google: ${account.id}")
             firebaseAuthWithGoogle(account, onSuccess, onError)
         } catch (e: ApiException) {
+            android.util.Log.e("GoogleAuth", "Google sign in failed", e)
             onError(e)
         }
     }
@@ -60,8 +62,10 @@ class GoogleAuthManager @Inject constructor(
         auth.signInWithCredential(credential)
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
+                    android.util.Log.d("GoogleAuth", "SignIn Success")
                     auth.currentUser?.let { onSuccess(it) }
                 } else {
+                    android.util.Log.e("GoogleAuth", "SignIn Failed", task.exception)
                     task.exception?.let { onError(it) }
                 }
             }

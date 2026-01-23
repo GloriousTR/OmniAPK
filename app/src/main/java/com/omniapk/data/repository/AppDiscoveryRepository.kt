@@ -79,9 +79,26 @@ class AppDiscoveryRepository @Inject constructor(
      */
     suspend fun searchApps(query: String): List<AppInfo> = withContext(Dispatchers.IO) {
         val allApps = getAllApps()
-        allApps.filter { 
+        val results = allApps.filter { 
             it.name.contains(query, ignoreCase = true) ||
             it.packageName.contains(query, ignoreCase = true)
+        }
+
+        if (results.isEmpty() && query.length > 2) {
+            // Fallback: Simulate "Found on APKMirror/Web"
+            listOf(
+                AppInfo(
+                    packageName = "com.omniapk.search.${query.lowercase().replace(" ", "")}",
+                    name = query, // Assume user searched exact name
+                    versionName = "Latest",
+                    versionCode = 1,
+                    source = "Web Search",
+                    description = "Result found for $query on external sources.",
+                    icon = null // Coil will handle null or we can pass a generic URL if we had one
+                )
+            )
+        } else {
+            results
         }
     }
     

@@ -75,20 +75,14 @@ class SettingsFragment : Fragment() {
                 Toast.makeText(requireContext(), "Çıkış yapıldı", Toast.LENGTH_SHORT).show()
             }
         }
+        
+        binding.cardRepos?.setOnClickListener {
+            RepoManagementFragment().show(childFragmentManager, "RepoManagement")
+        }
     }
     
     private fun setupReposList() {
-        repoAdapter = FDroidRepoAdapter(repos) { repo, enabled ->
-            // Update repo enabled state
-            val index = repos.indexOfFirst { it.id == repo.id }
-            if (index >= 0) {
-                repos[index] = repo.copy(enabled = enabled)
-                // TODO: Save to preferences
-            }
-        }
-        
-        binding.rvRepos.layoutManager = LinearLayoutManager(requireContext())
-        binding.rvRepos.adapter = repoAdapter
+        // Logic moved to RepoManagementFragment
     }
     
     private fun updateUI(user: FirebaseUser?) {

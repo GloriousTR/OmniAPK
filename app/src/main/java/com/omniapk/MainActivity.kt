@@ -11,6 +11,7 @@ import com.omniapk.ui.opensource.OpenSourceFragment
 import com.omniapk.ui.search.SearchActivity
 import com.omniapk.ui.settings.SettingsFragment
 import com.omniapk.ui.updates.UpdatesFragment
+import com.omniapk.ui.downloads.DownloadsFragment
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -24,6 +25,7 @@ class MainActivity : AppCompatActivity() {
     private val openSourceFragment = OpenSourceFragment()
     private val updatesFragment = UpdatesFragment()
     private val settingsFragment = SettingsFragment()
+    private val downloadsFragment = DownloadsFragment()
     
     private var activeFragment: Fragment = appsFragment
 
@@ -45,9 +47,12 @@ class MainActivity : AppCompatActivity() {
             add(R.id.fragmentContainer, openSourceFragment, "opensource").hide(openSourceFragment)
             add(R.id.fragmentContainer, updatesFragment, "updates").hide(updatesFragment)
             add(R.id.fragmentContainer, settingsFragment, "settings").hide(settingsFragment)
+            add(R.id.fragmentContainer, downloadsFragment, "downloads").hide(downloadsFragment)
         }.commit()
     }
     
+    // ... (existing setupBottomNavigation)
+
     private fun setupBottomNavigation() {
         binding.bottomNav.setOnItemSelectedListener { item ->
             when (item.itemId) {
@@ -91,7 +96,9 @@ class MainActivity : AppCompatActivity() {
         
         // Downloads icon
         binding.btnDownloads.setOnClickListener {
-            // TODO: Open downloads screen
+            switchFragment(downloadsFragment)
+            binding.tvTitle.text = "İndirilenler"
+            binding.bottomNav.selectedItemId = -1
         }
     }
     
