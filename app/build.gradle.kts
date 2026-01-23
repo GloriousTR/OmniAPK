@@ -35,6 +35,8 @@ android {
     }
     kotlinOptions {
         jvmTarget = "21"
+        languageVersion = "2.1"
+        apiVersion = "2.1"
     }
     buildFeatures {
         viewBinding = true
