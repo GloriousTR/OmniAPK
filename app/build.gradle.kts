@@ -3,6 +3,7 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("kotlin-kapt")
     id("com.google.dagger.hilt.android")
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -76,6 +77,11 @@ dependencies {
 
     // Image Loading
     implementation("io.coil-kt:coil:2.5.0")
+
+    // Firebase & Google Sign-In
+    implementation(platform("com.google.firebase:firebase-bom:32.7.0"))
+    implementation("com.google.firebase:firebase-auth-ktx")
+    implementation("com.google.android.gms:play-services-auth:20.7.0")
 
     // Shizuku - Temporarily disabled to isolate build issue
     // val shizuku_version = "13.1.5"

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "513493759492",
+    "project_id": "omniapk",
+    "storage_bucket": "omniapk.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:513493759492:android:fd9992db948e49d59de751",
+        "android_client_info": {
+          "package_name": "com.omniapk"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCQEtc_ip0dGOhPSbDfuljqMPl8SvYl4Bc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
