@@ -3,11 +3,17 @@
     <string name="app_name">OmniAPK</string>
 
     <!-- Navigation -->
-    <string name="nav_home">Ana Sayfa</string>
+    <string name="nav_apps">Uygulamalar</string>
+    <string name="nav_games">Oyunlar</string>
     <string name="nav_opensource">Açık Kaynak</string>
     <string name="nav_updates">Güncellemeler</string>
     <string name="nav_search">Ara</string>
     <string name="nav_settings">Ayarlar</string>
+
+    <!-- Tabs -->
+    <string name="tab_for_you">Sizin İçin</string>
+    <string name="tab_top_charts">Üst Sıralar</string>
+    <string name="tab_categories">Kategoriler</string>
 
     <!-- Home Screen -->
     <string name="installed_apps">Yüklü Uygulamalar</string>
