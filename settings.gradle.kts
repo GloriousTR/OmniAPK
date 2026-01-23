@@ -10,7 +10,14 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        // JitPack for AuroraOSS gplayapi
+        // GitLab Maven for AuroraOSS gplayapi
+        maven { 
+            url = uri("https://gitlab.com/AuroraOSS/gplayapi/-/raw/master/mvn-repo")
+            content {
+                includeGroup("com.aurora.gplayapi")
+            }
+        }
+        // JitPack for additional dependencies
         maven { url = uri("https://jitpack.io") }
     }
 }

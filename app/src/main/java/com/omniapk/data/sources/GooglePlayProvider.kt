@@ -1,7 +1,6 @@
 package com.omniapk.data.sources
 
 import android.content.Context
-import com.aurora.gplayapi.GooglePlayApi
 import com.aurora.gplayapi.data.models.App
 import com.aurora.gplayapi.data.models.AuthData
 import com.aurora.gplayapi.data.models.Category
@@ -18,7 +17,6 @@ import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONObject
-import java.util.Properties
 import javax.inject.Inject
 import javax.inject.Singleton
 
