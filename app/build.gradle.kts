@@ -1,7 +1,7 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
-    id("kotlin-kapt")
+    id("com.google.devtools.ksp")
     id("com.google.dagger.hilt.android")
     id("com.google.gms.google-services")
 }
@@ -41,9 +41,7 @@ android {
         buildConfig = true
     }
 
-    kapt {
-        correctErrorTypes = true
-    }
+
     
     lintOptions {
         isAbortOnError = false
@@ -73,7 +71,7 @@ dependencies {
 
     // Dependency Injection
     implementation("com.google.dagger:hilt-android:2.51.1")
-    kapt("com.google.dagger:hilt-android-compiler:2.51.1")
+    ksp("com.google.dagger:hilt-android-compiler:2.51.1")
 
     // Image Loading
     implementation("io.coil-kt:coil:2.5.0")
