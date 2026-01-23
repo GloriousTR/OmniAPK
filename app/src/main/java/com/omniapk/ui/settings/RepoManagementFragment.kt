@@ -88,7 +88,7 @@ class RepoManagementFragment : DialogFragment() {
                     val newRepo = FDroidRepo(
                         id = "custom_${System.currentTimeMillis()}",
                         name = name,
-                        url = url,
+                        address = url,
                         description = "Custom repository",
                         enabled = true
                     )
