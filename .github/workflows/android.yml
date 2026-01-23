@@ -82,12 +82,24 @@ jobs:
         cat app/build.gradle.kts
 
     - name: Build Debug APK
-      run: gradle clean assembleDebug --info --no-configuration-cache 2>&1 | tail -300
+      run: gradle clean assembleDebug --stacktrace --no-configuration-cache
 
-    - name: Rename APK
+    - name: Find and Rename APK
       env: 
           VERSION: ${{ steps.version.outputs.VERSION }}
-      run: mv app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/OmniAPK_v${VERSION}.apk
+      run: |
+        # Find the actual APK file
+        APK_FILE=$(find app/build/outputs -name "*.apk" -type f | head -1)
+        echo "Found APK: $APK_FILE"
+        
+        if [ -n "$APK_FILE" ]; then
+          APK_DIR=$(dirname "$APK_FILE")
+          mv "$APK_FILE" "$APK_DIR/OmniAPK_v${VERSION}.apk"
+          echo "Renamed to: $APK_DIR/OmniAPK_v${VERSION}.apk"
+        else
+          echo "Error: No APK file found!"
+          exit 1
+        fi
 
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v2
@@ -96,7 +108,7 @@ jobs:
         name: "OmniAPK v${{ steps.version.outputs.VERSION }}"
         draft: false
         prerelease: false
-        files: app/build/outputs/apk/debug/OmniAPK_v${{ steps.version.outputs.VERSION }}.apk
+        files: app/build/outputs/**/OmniAPK_v${{ steps.version.outputs.VERSION }}.apk
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -104,4 +116,5 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: OmniAPK_v${{ steps.version.outputs.VERSION }}
-        path: app/build/outputs/apk/debug/OmniAPK_v${{ steps.version.outputs.VERSION }}.apk
+        path: app/build/outputs/**/OmniAPK_v${{ steps.version.outputs.VERSION }}.apk
+
