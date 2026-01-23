@@ -1,8 +1,10 @@
 package com.omniapk.ui.details
 
-import android.content.DialogInterface
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.view.View
+import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -17,6 +19,7 @@ class AppDetailsActivity : AppCompatActivity() {
     private val viewModel: AppDetailsViewModel by viewModels()
     private var appName: String? = null
     private var packageName: String? = null
+    private var source: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -26,28 +29,63 @@ class AppDetailsActivity : AppCompatActivity() {
         appName = intent.getStringExtra("appName")
         packageName = intent.getStringExtra("packageName")
         val versionName = intent.getStringExtra("versionName")
+        val description = intent.getStringExtra("description")
+        source = intent.getStringExtra("source")
 
         binding.tvAppName.text = appName
         binding.tvPackageName.text = packageName
-        binding.tvVersion.text = "Version: $versionName"
+        binding.tvVersion.text = "Versiyon: $versionName"
+        
+        if (!description.isNullOrEmpty()) {
+            binding.tvDescription.text = description
+            binding.tvDescription.visibility = View.VISIBLE
+        }
 
-        setupListeners()
+        setupDownloadButtons()
         setupObservers()
     }
 
-    private fun setupListeners() {
-        binding.btnInstall.setOnClickListener {
-            // For now, we simulate a download URL or use a placeholder because scraping is hard to get right blindly.
-            // In a real scenario, we would have fetched the details.
-            // Let's assume we are downloading a test APK for demonstration if URL is null
-            val testUrl = "https://example.com/test.apk" 
-            val fileName = "$appName.apk"
-            
-            // Trigger download flow
-            viewModel.unkownAppDownloadLogic(testUrl, fileName)
-            
-            // Note: Since we don't have a real download monitor yet, we'll simulate the "Ready to Install" state after a delay or success
-            // But wait, the ViewModel manages status. 
+    private fun setupDownloadButtons() {
+        // Show/hide buttons based on source
+        when (source) {
+            "F-Droid" -> {
+                binding.btnDownloadFDroid.visibility = View.VISIBLE
+                binding.btnDownloadApkMirror.visibility = View.GONE
+                binding.btnDownloadApkPure.visibility = View.GONE
+            }
+            else -> {
+                binding.btnDownloadFDroid.visibility = View.GONE
+                binding.btnDownloadApkMirror.visibility = View.VISIBLE
+                binding.btnDownloadApkPure.visibility = View.VISIBLE
+            }
+        }
+        
+        // APKMirror button
+        binding.btnDownloadApkMirror.setOnClickListener {
+            val searchQuery = appName?.replace(" ", "+") ?: packageName
+            val url = "https://www.apkmirror.com/?post_type=app_release&searchtype=app&s=$searchQuery"
+            openBrowser(url)
+        }
+        
+        // APKPure button
+        binding.btnDownloadApkPure.setOnClickListener {
+            val url = "https://apkpure.com/search?q=$packageName"
+            openBrowser(url)
+        }
+        
+        // F-Droid button
+        binding.btnDownloadFDroid.setOnClickListener {
+            val url = "https://f-droid.org/en/packages/$packageName/"
+            openBrowser(url)
+        }
+    }
+    
+    private fun openBrowser(url: String) {
+        try {
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+            startActivity(intent)
+        } catch (e: Exception) {
+            Toast.makeText(this, "Tarayıcı açılamadı", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -56,23 +94,19 @@ class AppDetailsActivity : AppCompatActivity() {
             binding.tvStatus.text = status
             
             if (status.contains("Download started")) {
-                 // In a real app, we'd wait for completion.
-                 // Here, let's enable a "Finish Install" or "Choose Method" dialog for manual triggering 
-                 // or simulate completion.
                  showInstallMethodDialog()
             }
         }
 
         viewModel.isProcessing.observe(this) { processing ->
             binding.progressBar.visibility = if (processing) View.VISIBLE else View.GONE
-            binding.btnInstall.isEnabled = !processing
         }
     }
 
     private fun showInstallMethodDialog() {
         val methods = arrayOf("Standard", "Root", "Shizuku")
         AlertDialog.Builder(this)
-            .setTitle("Choose Install Method")
+            .setTitle("Kurulum Yöntemi Seçin")
             .setItems(methods) { _, which ->
                 val method = when (which) {
                     0 -> InstallMethod.STANDARD

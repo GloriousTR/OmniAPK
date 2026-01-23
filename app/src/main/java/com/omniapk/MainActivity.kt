@@ -2,7 +2,6 @@ package com.omniapk
 
 import android.content.Intent
 import android.os.Bundle
-import android.view.inputmethod.EditorInfo
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import com.omniapk.databinding.ActivityMainBinding
@@ -36,7 +35,6 @@ class MainActivity : AppCompatActivity() {
         setupFragments()
         setupBottomNavigation()
         setupTopBar()
-        setupSearch()
     }
     
     private fun setupFragments() {
@@ -79,34 +77,21 @@ class MainActivity : AppCompatActivity() {
     }
     
     private fun setupTopBar() {
+        // Search icon
+        binding.btnSearch.setOnClickListener {
+            startActivity(Intent(this, SearchActivity::class.java))
+        }
+        
+        // Settings icon
         binding.btnSettings.setOnClickListener {
             switchFragment(settingsFragment)
             binding.tvTitle.text = getString(R.string.nav_settings)
             binding.bottomNav.selectedItemId = -1 // Deselect bottom nav
         }
         
+        // Downloads icon
         binding.btnDownloads.setOnClickListener {
             // TODO: Open downloads screen
-        }
-    }
-    
-    private fun setupSearch() {
-        binding.etSearch.setOnEditorActionListener { _, actionId, _ ->
-            if (actionId == EditorInfo.IME_ACTION_SEARCH) {
-                val query = binding.etSearch.text.toString()
-                if (query.isNotEmpty()) {
-                    val intent = Intent(this, SearchActivity::class.java)
-                    intent.putExtra("query", query)
-                    startActivity(intent)
-                }
-                true
-            } else {
-                false
-            }
-        }
-        
-        binding.etSearch.setOnClickListener {
-            startActivity(Intent(this, SearchActivity::class.java))
         }
     }
     
