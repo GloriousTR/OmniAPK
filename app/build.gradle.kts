@@ -84,7 +84,8 @@ dependencies {
     implementation("com.google.android.gms:play-services-auth:20.7.0")
 
     // GPlayApi - Google Play API (Aurora Store's library)
-    implementation("com.aurora.gplayapi:gplayapi:3.2.7")
+    // Temporarily disabled - not available on public Maven repositories
+    // implementation("com.aurora.gplayapi:gplayapi:3.2.7")
     
     // OkHttp for network requests
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
