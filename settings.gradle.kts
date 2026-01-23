@@ -10,6 +10,8 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        // GitLab for AuroraOSS gplayapi
+        maven { url = uri("https://gitlab.com/AuroraOSS/repos/-/raw/main/") }
     }
 }
 

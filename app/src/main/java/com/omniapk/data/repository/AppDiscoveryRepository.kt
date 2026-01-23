@@ -6,6 +6,7 @@ import com.omniapk.data.model.Categories
 import com.omniapk.data.model.FeaturedSection
 import com.omniapk.data.model.TopChart
 import com.omniapk.data.sources.FDroidProvider
+import com.omniapk.data.sources.GooglePlayProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -13,15 +14,17 @@ import javax.inject.Singleton
 
 /**
  * Repository for app discovery (Aurora Store-like)
- * Combines F-Droid API + APKMirror/APKPure for app recommendations
+ * Combines Google Play API + F-Droid + APKMirror/APKPure
  */
 @Singleton
 class AppDiscoveryRepository @Inject constructor(
-    private val fDroidProvider: FDroidProvider
+    private val fDroidProvider: FDroidProvider,
+    private val googlePlayProvider: GooglePlayProvider
 ) {
     
     // Cache for loaded apps
     private var cachedFDroidApps: List<AppInfo>? = null
+    private var cachedGooglePlayApps: List<AppInfo>? = null
     private var cachedPopularApps: List<AppInfo>? = null
     
     /**
@@ -75,41 +78,67 @@ class AppDiscoveryRepository @Inject constructor(
     }
     
     /**
-     * Search apps across all sources
+     * Search apps across all sources (Google Play + F-Droid + local)
      */
     suspend fun searchApps(query: String): List<AppInfo> = withContext(Dispatchers.IO) {
+        val results = mutableListOf<AppInfo>()
+        
+        // 1. Search Google Play first
+        try {
+            val googleResults = googlePlayProvider.searchApp(query)
+            results.addAll(googleResults)
+        } catch (e: Exception) {
+            android.util.Log.e("AppDiscoveryRepo", "Google Play search failed", e)
+        }
+        
+        // 2. Search local cache (F-Droid + popular apps)
         val allApps = getAllApps()
-        val results = allApps.filter { 
+        val localResults = allApps.filter { 
             it.name.contains(query, ignoreCase = true) ||
             it.packageName.contains(query, ignoreCase = true)
         }
-
-        if (results.isEmpty() && query.length > 2) {
-            // Fallback: Simulate "Found on APKMirror/Web"
+        results.addAll(localResults)
+        
+        // 3. Remove duplicates by package name
+        val uniqueResults = results.distinctBy { it.packageName }
+        
+        if (uniqueResults.isEmpty() && query.length > 2) {
+            // Fallback: Simulate "Not found"
             listOf(
                 AppInfo(
                     packageName = "com.omniapk.search.${query.lowercase().replace(" ", "")}",
-                    name = query, // Assume user searched exact name
+                    name = query,
                     versionName = "Latest",
                     versionCode = 1,
                     source = "Web Search",
-                    description = "Result found for $query on external sources.",
-                    icon = null // Coil will handle null or we can pass a generic URL if we had one
+                    description = "Try searching on APKMirror or APKPure",
+                    icon = null
                 )
             )
         } else {
-            results
+            uniqueResults
         }
     }
     
     private suspend fun getAllApps(): List<AppInfo> {
+        // Fetch from F-Droid
         if (cachedFDroidApps == null) {
             cachedFDroidApps = fDroidProvider.getPopularApps()
         }
         
-        // Combine F-Droid apps with popular apps
+        // Fetch from Google Play
+        if (cachedGooglePlayApps == null) {
+            try {
+                cachedGooglePlayApps = googlePlayProvider.getTopApps(false)
+            } catch (e: Exception) {
+                android.util.Log.e("AppDiscoveryRepo", "Google Play fetch failed", e)
+                cachedGooglePlayApps = emptyList()
+            }
+        }
+        
+        // Combine all sources + popular apps
         val popularApps = getPopularApps()
-        return (cachedFDroidApps ?: emptyList()) + popularApps
+        return (cachedGooglePlayApps ?: emptyList()) + (cachedFDroidApps ?: emptyList()) + popularApps
     }
     
     private fun getAppsForSection(title: String, allApps: List<AppInfo>, isGame: Boolean): List<AppInfo> {

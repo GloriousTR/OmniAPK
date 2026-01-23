@@ -83,6 +83,12 @@ dependencies {
     implementation("com.google.firebase:firebase-auth-ktx")
     implementation("com.google.android.gms:play-services-auth:20.7.0")
 
+    // GPlayApi - Google Play API (Aurora Store's library)
+    implementation("com.gitlab.AuroraOSS:gplayapi:3.3.6")
+    
+    // OkHttp for network requests
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+
     // Shizuku - Temporarily disabled to isolate build issue
     // val shizuku_version = "13.1.5"
     // implementation("dev.rikka.shizuku:api:$shizuku_version")
