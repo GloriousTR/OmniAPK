@@ -12,7 +12,20 @@
           "package_name": "com.omniapk"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "513493759492-oj3onbaglvv0l260fe9dm7ijn3l083dr.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.omniapk",
+            "certificate_hash": "1b449df852172551d714bd33a00287e7bfec5cc2"
+          }
+        },
+        {
+          "client_id": "513493759492-q9v7ihjghi3h68sed9mvvs0icupedmfg.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyCQEtc_ip0dGOhPSbDfuljqMPl8SvYl4Bc"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "513493759492-q9v7ihjghi3h68sed9mvvs0icupedmfg.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
