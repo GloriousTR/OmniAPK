@@ -5,6 +5,8 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import coil.load
+import com.omniapk.R
 import com.omniapk.data.model.AppInfo
 import com.omniapk.databinding.ItemAppBinding
 
@@ -29,7 +31,17 @@ class AppsAdapter(
             binding.tvAppName.text = appInfo.name
             binding.tvPackageName.text = appInfo.packageName
             binding.tvVersion.text = "v${appInfo.versionName}"
-            binding.ivAppIcon.setImageDrawable(appInfo.icon)
+            
+            if (appInfo.icon != null) {
+                binding.ivAppIcon.setImageDrawable(appInfo.icon)
+            } else if (!appInfo.iconUrl.isNullOrEmpty()) {
+                binding.ivAppIcon.load(appInfo.iconUrl) {
+                    placeholder(R.drawable.ic_app_placeholder)
+                    error(R.drawable.ic_app_placeholder)
+                }
+            } else {
+                binding.ivAppIcon.setImageResource(R.drawable.ic_app_placeholder)
+            }
             
             itemView.setOnClickListener { onItemClick(appInfo) }
         }

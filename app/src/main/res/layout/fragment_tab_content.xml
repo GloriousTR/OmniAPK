@@ -1,13 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:background="@color/background">
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:background="@color/background">
 
-    <!-- Loading Indicator -->
-    <ProgressBar android:id="@+id/progressBar" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center" android:visibility="gone"/>
+    <!-- Filters for Top Charts -->
+    <HorizontalScrollView android:id="@+id/scrollFilters" android:layout_width="match_parent" android:layout_height="wrap_content" android:scrollbars="none" android:paddingHorizontal="16dp" android:paddingVertical="8dp" android:clipToPadding="false" android:visibility="gone">
 
-    <!-- Empty State -->
-    <TextView android:id="@+id/tvEmpty" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center" android:text="@string/no_apps_found" android:textColor="@color/text_secondary" android:textSize="16sp" android:visibility="gone"/>
+        <com.google.android.material.chip.ChipGroup android:id="@+id/chipGroupFilters" android:layout_width="wrap_content" android:layout_height="wrap_content" app:singleSelection="true" app:selectionRequired="true"/>
 
-    <!-- Apps List -->
-    <androidx.recyclerview.widget.RecyclerView android:id="@+id/recyclerView" android:layout_width="match_parent" android:layout_height="match_parent" android:clipToPadding="false" android:padding="8dp"/>
+    </HorizontalScrollView>
 
-</FrameLayout>
+    <FrameLayout android:layout_width="match_parent" android:layout_height="match_parent">
+
+        <!-- Loading Indicator -->
+        <ProgressBar android:id="@+id/progressBar" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center" android:visibility="gone"/>
+
+        <!-- Empty State -->
+        <TextView android:id="@+id/tvEmpty" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center" android:text="@string/no_apps_found" android:textColor="@color/text_secondary" android:textSize="16sp" android:visibility="gone"/>
+
+        <!-- Apps List -->
+        <androidx.recyclerview.widget.RecyclerView android:id="@+id/recyclerView" android:layout_width="match_parent" android:layout_height="match_parent" android:clipToPadding="false" android:padding="8dp"/>
+
+    </FrameLayout>
+
+</LinearLayout>
