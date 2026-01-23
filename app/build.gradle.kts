@@ -72,8 +72,8 @@ dependencies {
     implementation("org.jsoup:jsoup:1.17.2")
 
     // Dependency Injection
-    implementation("com.google.dagger:hilt-android:2.50")
-    kapt("com.google.dagger:hilt-android-compiler:2.50")
+    implementation("com.google.dagger:hilt-android:2.51.1")
+    kapt("com.google.dagger:hilt-android-compiler:2.51.1")
 
     // Image Loading
     implementation("io.coil-kt:coil:2.5.0")
