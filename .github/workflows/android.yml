@@ -82,15 +82,7 @@ jobs:
         cat app/build.gradle.kts
 
     - name: Build Debug APK
-      id: build
-      continue-on-error: true
-      run: gradle clean assembleDebug --info --no-configuration-cache
-      
-    - name: Check Build Result
-      if: steps.build.outcome == 'failure'
-      run: |
-        echo "Build failed! Check the logs above for the actual error."
-        exit 1
+      run: gradle clean assembleDebug --stacktrace --no-configuration-cache
       
     - name: List Build Outputs
       run: |
