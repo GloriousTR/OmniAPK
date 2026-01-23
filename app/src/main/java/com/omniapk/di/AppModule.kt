@@ -2,6 +2,7 @@ package com.omniapk.di
 
 import com.omniapk.data.sources.ApkMirrorProvider
 import com.omniapk.data.sources.ApkPureProvider
+import com.omniapk.data.sources.FDroidProvider
 import com.omniapk.data.sources.PlayStoreProvider
 import com.omniapk.data.sources.SourceProvider
 import dagger.Module
@@ -29,4 +30,9 @@ object AppModule {
     @IntoSet
     @Singleton
     fun providePlayStore(provider: PlayStoreProvider): SourceProvider = provider
+
+    @Provides
+    @IntoSet
+    @Singleton
+    fun provideFDroid(provider: FDroidProvider): SourceProvider = provider
 }
