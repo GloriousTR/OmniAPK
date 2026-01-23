@@ -83,8 +83,8 @@ dependencies {
     implementation("com.google.firebase:firebase-auth-ktx")
     implementation("com.google.android.gms:play-services-auth:20.7.0")
 
-    // GPlayApi - Google Play API (Aurora Store's library)
-    implementation("com.gitlab.AuroraOSS:gplayapi:3.3.6")
+    // GPlayApi - Google Play API (Aurora Store's library via JitPack)
+    implementation("com.gitlab.AuroraOSS:gplayapi:3.2.7")
     
     // OkHttp for network requests
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
