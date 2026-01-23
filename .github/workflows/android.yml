@@ -13,7 +13,6 @@ jobs:
       contents: write
 
     steps:
-      # Fetch depth 0 is critical for calculating tags
     - uses: actions/checkout@v4
       with:
         fetch-depth: 0
@@ -31,24 +30,15 @@ jobs:
       id: version
       shell: bash
       run: |
-        # Default to 1.0
         NEXT_VERSION="1.0"
-
-        # Fetch all tags
         git fetch --tags --force
-
-        # Find the latest tag that looks like v1.something
         LATEST_TAG=$(git tag -l "v1.*" | grep -E "^v1\.[0-9]+$" | sort -V | tail -n 1)
-
         echo "Found Latest Tag: $LATEST_TAG"
-
         if [ -z "$LATEST_TAG" ]; then
            echo "No existing v1 tags found. Starting at 1.0"
            NEXT_VERSION="1.0"
         else
-           # Extract the minor number. e.g. v1.15 -> 15
            CURRENT_MINOR=${LATEST_TAG#v1.}
-
            if [[ "$CURRENT_MINOR" =~ ^[0-9]+$ ]]; then
                NEXT_MINOR=$((CURRENT_MINOR + 1))
                NEXT_VERSION="1.$NEXT_MINOR"
@@ -57,7 +47,6 @@ jobs:
                NEXT_VERSION="1.0" 
            fi
         fi
-
         echo "Calculated Version: $NEXT_VERSION"
         echo "VERSION=$NEXT_VERSION" >> $GITHUB_OUTPUT
 
@@ -68,79 +57,60 @@ jobs:
 
     - name: Update Version in Gradle
       env: 
-          VERSION: ${{ steps.version.outputs.VERSION }}
-          BUILD_NUMBER: ${{ github.run_number }}
+        VERSION: ${{ steps.version.outputs.VERSION }}
+        BUILD_NUMBER: ${{ github.run_number }}
       run: |
         VERSION_CODE=$BUILD_NUMBER
         echo "Updating build.gradle.kts with versionName=$VERSION and versionCode=$VERSION_CODE"
-        
-        # Update Kotlin DSL build script
         sed -i "s/versionCode = 1/versionCode = $VERSION_CODE/g" app/build.gradle.kts
         sed -i "s/versionName = \"1.0\"/versionName = \"$VERSION\"/g" app/build.gradle.kts
-        
-        # Verify content
-        cat app/build.gradle.kts
 
-    # Decode Keystore from Base64 (if secrets are configured)
-    - name: Decode Keystore
-      if: ${{ env.KEYSTORE_BASE64 != '' }}
-      env:
-        KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
-      run: |
-        echo "$KEYSTORE_BASE64" | base64 -d > app/release.keystore
-        echo "Keystore decoded successfully"
-
-    # Build Release APK with signing (if keystore exists)
-    - name: Build Release APK (Signed)
-      if: ${{ env.KEYSTORE_BASE64 != '' }}
+    - name: Build APK
       env:
         KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
         KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
         KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
         KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
       run: |
-        # Create signing config in build.gradle.kts dynamically
-        cat >> app/build.gradle.kts << 'EOF'
+        if [ -n "$KEYSTORE_BASE64" ]; then
+          echo "Building RELEASE APK with signing..."
+          echo "$KEYSTORE_BASE64" | base64 -d > app/release.keystore
+          
+          # Add signing config to build.gradle.kts
+          cat >> app/build.gradle.kts << 'EOF'
 
-android.signingConfigs.create("release") {
-    storeFile = file("release.keystore")
-    storePassword = System.getenv("KEYSTORE_PASSWORD")
-    keyAlias = System.getenv("KEY_ALIAS")
-    keyPassword = System.getenv("KEY_PASSWORD")
-}
+        android.signingConfigs.create("release") {
+            storeFile = file("release.keystore")
+            storePassword = System.getenv("KEYSTORE_PASSWORD")
+            keyAlias = System.getenv("KEY_ALIAS")
+            keyPassword = System.getenv("KEY_PASSWORD")
+        }
 
-android.buildTypes.getByName("release") {
-    signingConfig = android.signingConfigs.getByName("release")
-}
-EOF
-        
-        gradle clean assembleRelease --stacktrace --no-configuration-cache
-
-    # Fallback: Build Debug APK (if no keystore configured)
-    - name: Build Debug APK
-      if: ${{ env.KEYSTORE_BASE64 == '' }}
-      env:
-        KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
-      run: gradle clean assembleDebug --stacktrace --no-configuration-cache
+        android.buildTypes.getByName("release") {
+            signingConfig = android.signingConfigs.getByName("release")
+        }
+        EOF
+          
+          gradle clean assembleRelease --stacktrace --no-configuration-cache
+        else
+          echo "Building DEBUG APK (no keystore configured)..."
+          gradle clean assembleDebug --stacktrace --no-configuration-cache
+        fi
       
     - name: List Build Outputs
       run: |
         echo "=== Listing all build outputs ==="
         find app/build/outputs -type f -name "*.apk" 2>/dev/null || echo "No APK files found"
-        ls -la app/build/outputs/apk/debug/ 2>/dev/null || echo "Debug folder does not exist"
-        ls -la app/build/outputs/apk/release/ 2>/dev/null || echo "Release folder does not exist"
 
     - name: Find and Rename APK
       env: 
-          VERSION: ${{ steps.version.outputs.VERSION }}
+        VERSION: ${{ steps.version.outputs.VERSION }}
       run: |
-        # Find the actual APK file (prefer release, fallback to debug)
         APK_FILE=$(find app/build/outputs -name "*release*.apk" -type f | head -1)
         if [ -z "$APK_FILE" ]; then
           APK_FILE=$(find app/build/outputs -name "*.apk" -type f | head -1)
         fi
         echo "Found APK: $APK_FILE"
-        
         if [ -n "$APK_FILE" ]; then
           APK_DIR=$(dirname "$APK_FILE")
           mv "$APK_FILE" "$APK_DIR/OmniAPK_v${VERSION}.apk"
@@ -161,7 +131,7 @@ EOF
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Upload Debug APK Artifact
+    - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
         name: OmniAPK_v${{ steps.version.outputs.VERSION }}
