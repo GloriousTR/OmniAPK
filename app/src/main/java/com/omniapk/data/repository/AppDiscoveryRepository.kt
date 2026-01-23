@@ -104,7 +104,7 @@ class AppDiscoveryRepository @Inject constructor(
     
     private suspend fun getAllApps(): List<AppInfo> {
         if (cachedFDroidApps == null) {
-            cachedFDroidApps = fDroidProvider.fetchApps()
+            cachedFDroidApps = fDroidProvider.getPopularApps()
         }
         
         // Combine F-Droid apps with popular apps
