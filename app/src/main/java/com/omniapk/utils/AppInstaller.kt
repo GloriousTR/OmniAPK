@@ -5,6 +5,7 @@ import com.omniapk.utils.install.InstallStrategy
 import com.omniapk.utils.install.RootInstallStrategy
 import com.omniapk.utils.install.ShizukuInstallStrategy
 import com.omniapk.utils.install.StandardInstallStrategy
+import com.omniapk.utils.install.SplitInstallStrategy
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
 import javax.inject.Inject
