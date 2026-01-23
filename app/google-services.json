@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "513493759492-1lon5gk6i7782lau4arhrjlh876vg8gj.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.omniapk",
+            "certificate_hash": "c5f83b8b36c2f907fe817e1d39e58554aa965896"
+          }
+        },
+        {
           "client_id": "513493759492-oj3onbaglvv0l260fe9dm7ijn3l083dr.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
