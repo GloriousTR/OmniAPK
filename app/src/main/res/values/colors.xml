@@ -42,4 +42,7 @@
 
     <!-- Ripple -->
     <color name="ripple_color">#33BB86FC</color>
+
+    <!-- Misc -->
+    <color name="divider">#1FFFFFFF</color>
 </resources>
