@@ -5,9 +5,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import com.omniapk.databinding.ActivityMainBinding
 import com.omniapk.ui.home.HomeFragment
+import com.omniapk.ui.opensource.OpenSourceFragment
 import com.omniapk.ui.search.SearchFragment
 import com.omniapk.ui.settings.SettingsFragment
-import com.omniapk.ui.updates.UpdatesFragment
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -17,7 +17,7 @@ class MainActivity : AppCompatActivity() {
     
     // Keep fragment instances to preserve state
     private val homeFragment = HomeFragment()
-    private val updatesFragment = UpdatesFragment()
+    private val openSourceFragment = OpenSourceFragment()
     private val searchFragment = SearchFragment()
     private val settingsFragment = SettingsFragment()
     
@@ -36,7 +36,7 @@ class MainActivity : AppCompatActivity() {
         // Add all fragments but hide them initially
         supportFragmentManager.beginTransaction().apply {
             add(R.id.fragmentContainer, homeFragment, "home")
-            add(R.id.fragmentContainer, updatesFragment, "updates").hide(updatesFragment)
+            add(R.id.fragmentContainer, openSourceFragment, "opensource").hide(openSourceFragment)
             add(R.id.fragmentContainer, searchFragment, "search").hide(searchFragment)
             add(R.id.fragmentContainer, settingsFragment, "settings").hide(settingsFragment)
         }.commit()
@@ -50,9 +50,9 @@ class MainActivity : AppCompatActivity() {
                     binding.tvTitle.text = getString(R.string.app_name)
                     true
                 }
-                R.id.nav_updates -> {
-                    switchFragment(updatesFragment)
-                    binding.tvTitle.text = getString(R.string.nav_updates)
+                R.id.nav_opensource -> {
+                    switchFragment(openSourceFragment)
+                    binding.tvTitle.text = getString(R.string.nav_opensource)
                     true
                 }
                 R.id.nav_search -> {
