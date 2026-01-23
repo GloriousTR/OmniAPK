@@ -32,6 +32,9 @@ class AppsFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        
+        binding.tvHeader.text = getString(com.omniapk.R.string.nav_apps)
+        
         setupRecyclerView()
         setupObservers()
     }
@@ -43,10 +46,8 @@ class AppsFragment : Fragment() {
 
     private fun setupObservers() {
         viewModel.installedApps.observe(viewLifecycleOwner) { apps ->
-            // Filter to show only non-game apps (simple heuristic)
-            val nonGameApps = apps.filter { app -> 
-                !app.packageName.contains("game", ignoreCase = true) 
-            }
+            // Filter to show only non-game apps using the isGame property
+            val nonGameApps = apps.filter { !it.isGame }
             adapter.submitList(nonGameApps)
             binding.tvAppCount.text = getString(com.omniapk.R.string.app_count, nonGameApps.size)
             binding.tvEmpty.visibility = if (nonGameApps.isEmpty()) View.VISIBLE else View.GONE

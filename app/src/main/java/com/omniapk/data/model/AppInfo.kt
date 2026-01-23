@@ -10,6 +10,8 @@ data class AppInfo(
     val icon: Drawable? = null,
     val iconUrl: String? = null,
     val isSystemApp: Boolean = false,
+    val isGame: Boolean = false,
     val source: String? = null,
-    val description: String? = null
+    val description: String? = null,
+    val category: Int = 0
 )

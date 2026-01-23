@@ -33,7 +33,6 @@ class GamesFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         
-        // Update header text
         binding.tvHeader.text = getString(com.omniapk.R.string.nav_games)
         
         setupRecyclerView()
@@ -47,11 +46,8 @@ class GamesFragment : Fragment() {
 
     private fun setupObservers() {
         viewModel.installedApps.observe(viewLifecycleOwner) { apps ->
-            // Filter to show only games (simple heuristic)
-            val gameApps = apps.filter { app -> 
-                app.packageName.contains("game", ignoreCase = true) ||
-                app.name.contains("game", ignoreCase = true)
-            }
+            // Filter to show only games using the isGame property
+            val gameApps = apps.filter { it.isGame }
             adapter.submitList(gameApps)
             binding.tvAppCount.text = getString(com.omniapk.R.string.app_count, gameApps.size)
             binding.tvEmpty.visibility = if (gameApps.isEmpty()) View.VISIBLE else View.GONE
