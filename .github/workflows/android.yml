@@ -69,7 +69,7 @@ jobs:
         VERSION_CODE=$BUILD_NUMBER
         echo "Updating build.gradle.kts with versionName=$VERSION and versionCode=$VERSION_CODE"
         sed -i "s/versionCode = 1/versionCode = $VERSION_CODE/g" app/build.gradle.kts
-        sed -i "s/versionName = \"1.0\"/versionName = \"$VERSION\"/g" app/build.gradle.kts
+        sed -i "s/versionName = \"1.0.0\"/versionName = \"$VERSION\"/g" app/build.gradle.kts
 
     - name: Build APK
       env:
@@ -80,23 +80,15 @@ jobs:
       run: |
         if [ -n "$KEYSTORE_BASE64" ]; then
           echo "Building RELEASE APK with signing..."
+          # Decode Keystore
           echo "$KEYSTORE_BASE64" | base64 -d > app/release.keystore
           
-          # Add signing config to build.gradle.kts
-          cat >> app/build.gradle.kts << 'EOF'
-
-        android.signingConfigs.create("release") {
-            storeFile = file("release.keystore")
-            storePassword = System.getenv("KEYSTORE_PASSWORD")
-            keyAlias = System.getenv("KEY_ALIAS")
-            keyPassword = System.getenv("KEY_PASSWORD")
-        }
-
-        android.buildTypes.getByName("release") {
-            signingConfig = android.signingConfigs.getByName("release")
-        }
-        EOF
+          # Create signing.properties for Aurora Store build script
+          echo "KEY_ALIAS=$KEY_ALIAS" > app/signing.properties
+          echo "KEY_PASSWORD=$KEY_PASSWORD" >> app/signing.properties
+          echo "STORE_FILE=release.keystore" >> app/signing.properties
           
+          # Build
           ./gradlew clean assembleRelease --stacktrace --no-configuration-cache
         else
           echo "Building DEBUG APK (no keystore configured)..."

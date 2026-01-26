@@ -1,8 +1,14 @@
+/*
+ * SPDX-FileCopyrightText: 2021-2025 Rahul Kumar Patel <whyorean@gmail.com>
+ * SPDX-FileCopyrightText: 2022-2025 The Calyx Institute
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ */
+
 pluginManagement {
     repositories {
+        gradlePluginPortal()
         google()
         mavenCentral()
-        gradlePluginPortal()
     }
 }
 dependencyResolutionManagement {
@@ -10,17 +16,20 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        // GitLab Maven for AuroraOSS gplayapi
-        maven { 
-            url = uri("https://gitlab.com/AuroraOSS/gplayapi/-/raw/master/mvn-repo")
+        // libsu is only available via jitpack
+        maven("https://jitpack.io/") {
             content {
-                includeGroup("com.aurora.gplayapi")
+                includeModule("com.github.topjohnwu.libsu", "core")
             }
         }
-        // JitPack for additional dependencies
-        maven { url = uri("https://jitpack.io") }
+        // Only included in huawei variants
+        maven("https://developer.huawei.com/repo/") {
+            content {
+                includeGroup("com.huawei.hms")
+                includeGroup("com.huawei.android.hms")
+            }
+        }
     }
 }
-
-rootProject.name = "OmniAPK"
 include(":app")
+rootProject.name = "OmniAPK"
