@@ -59,6 +59,10 @@ class SettingsFragment : PreferenceFragmentCompat() {
             findNavController().navigate(R.id.updatesPreference)
             true
         }
+        findPreference<Preference>("pref_fdroid_repos")?.setOnPreferenceClickListener {
+            findNavController().navigate(R.id.repoManagementFragment)
+            true
+        }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
