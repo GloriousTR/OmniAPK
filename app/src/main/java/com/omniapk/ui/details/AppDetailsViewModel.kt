@@ -25,7 +25,7 @@ class AppDetailsViewModel @Inject constructor(
     private val _isProcessing = MutableLiveData<Boolean>()
     val isProcessing: LiveData<Boolean> = _isProcessing
 
-    fun unkownAppDownloadLogic(url: String?, fileName: String) {
+    fun unknownAppDownloadLogic(url: String?, fileName: String) {
         if (url == null) {
             _status.value = "Error: Invalid download URL"
             return

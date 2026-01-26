@@ -6,6 +6,13 @@ plugins {
     id("com.google.gms.google-services")
 }
 
+// Explicitly disable kapt to prevent conflicts with KSP
+// KSP is used instead of kapt for annotation processing
+// Updated: 2026-01-26 - Fixed build issues for release
+tasks.matching { it.name.startsWith("kapt") }.configureEach {
+    enabled = false
+}
+
 android {
     namespace = "com.omniapk"
     compileSdk = 34
@@ -35,6 +42,7 @@ android {
     }
     kotlinOptions {
         jvmTarget = "21"
+        languageVersion = "2.0"
     }
     buildFeatures {
         viewBinding = true
