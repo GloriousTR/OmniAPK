@@ -74,6 +74,12 @@ data class FDroidRepo(
                 address = "https://fdroid-repo.calyxinstitute.org/fdroid/repo",
                 description = "CalyxOS privacy apps"
             ),
+            FDroidRepo(
+                id = "c10udburst",
+                name = "C10udburst",
+                address = "https://c10udburst.github.io/fdroid/repo",
+                description = "C10udburst app collection"
+            ),
             
             // === Communication & Social ===
             FDroidRepo(

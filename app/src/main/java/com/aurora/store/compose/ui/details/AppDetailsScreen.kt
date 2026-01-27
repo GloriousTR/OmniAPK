@@ -62,6 +62,7 @@ import com.aurora.store.compose.preview.AppPreviewProvider
 import com.aurora.store.compose.preview.PreviewTemplate
 import com.aurora.store.compose.ui.commons.PermissionRationaleScreen
 import com.aurora.store.compose.ui.details.composable.Actions
+import com.aurora.store.compose.ui.details.composable.AlternativeDownloads
 import com.aurora.store.compose.ui.details.composable.Changelog
 import com.aurora.store.compose.ui.details.composable.Compatibility
 import com.aurora.store.compose.ui.details.composable.DataSafety
@@ -355,6 +356,12 @@ private fun ScreenContentApp(
                 )
 
                 SetupActions()
+
+                // Alternative download options (APKMirror, APKPure)
+                AlternativeDownloads(
+                    packageName = app.packageName,
+                    appName = app.displayName
+                )
 
                 Tags(app = app)
                 Changelog(changelog = app.changes)

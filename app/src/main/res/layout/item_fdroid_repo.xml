@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ OmniAPK - F-Droid Repo List Item
+  -->
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginHorizontal="@dimen/margin_normal" android:layout_marginVertical="@dimen/margin_small" app:cardCornerRadius="12dp" app:cardElevation="2dp">
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:padding="@dimen/padding_normal">
+
+        <androidx.appcompat.widget.AppCompatImageView android:id="@+id/repo_icon" android:layout_width="48dp" android:layout_height="48dp" android:padding="8dp" android:background="@drawable/circle_background" android:backgroundTint="?colorSurfaceVariant" android:src="@drawable/ic_open_source" app:tint="?colorOnSurfaceVariant" />
+
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="@dimen/margin_normal" android:orientation="vertical">
+
+            <com.google.android.material.textview.MaterialTextView android:id="@+id/repo_name" android:layout_width="match_parent" android:layout_height="wrap_content" android:ellipsize="end" android:maxLines="1" android:textAppearance="@style/TextAppearance.Aurora.Title" android:textSize="16sp" tools:text="F-Droid" />
+
+            <com.google.android.material.textview.MaterialTextView android:id="@+id/repo_description" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:ellipsize="end" android:maxLines="2" android:textAppearance="@style/TextAppearance.Aurora.Line1" android:textColor="?colorOnSurfaceVariant" tools:text="The main F-Droid repository" />
+
+            <com.google.android.material.textview.MaterialTextView android:id="@+id/repo_url" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:ellipsize="end" android:maxLines="1" android:textAppearance="@style/TextAppearance.Aurora.Line2" android:textColor="?colorPrimary" android:textSize="12sp" tools:text="https://f-droid.org/repo" />
+        </LinearLayout>
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>
