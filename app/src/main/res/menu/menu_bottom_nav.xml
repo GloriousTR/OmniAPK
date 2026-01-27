@@ -19,19 +19,12 @@
 
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <item
-        android:id="@id/appsContainerFragment"
-        android:icon="@drawable/ic_apps"
-        android:title="@string/title_apps" />
+    <item android:id="@id/appsContainerFragment" android:icon="@drawable/ic_apps" android:title="@string/title_apps" />
 
-    <item
-        android:id="@id/gamesContainerFragment"
-        android:icon="@drawable/ic_games"
-        android:title="@string/title_games" />
+    <item android:id="@id/gamesContainerFragment" android:icon="@drawable/ic_games" android:title="@string/title_games" />
 
-    <item
-        android:id="@id/updatesFragment"
-        android:icon="@drawable/ic_updates"
-        android:title="@string/title_updates" />
+    <item android:id="@+id/openSourceFragment" android:icon="@drawable/ic_open_source" android:title="@string/title_open_source" />
+
+    <item android:id="@id/updatesFragment" android:icon="@drawable/ic_updates" android:title="@string/title_updates" />
 
 </menu>
