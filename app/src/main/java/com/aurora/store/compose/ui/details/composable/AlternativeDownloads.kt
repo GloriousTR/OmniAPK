@@ -8,7 +8,6 @@ package com.aurora.store.compose.ui.details.composable
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,7 +17,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -27,14 +25,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
-import com.aurora.gplayapi.data.models.App
 import com.aurora.store.R
 import com.aurora.store.compose.preview.PreviewTemplate
-import com.aurora.store.data.providers.APKMirrorProvider
-import com.aurora.store.data.providers.APKPureProvider
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 /**
  * Composable to display alternative download options (APKMirror, APKPure)
@@ -48,7 +40,6 @@ fun AlternativeDownloads(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val coroutineScope = rememberCoroutineScope()
 
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -57,11 +48,7 @@ fun AlternativeDownloads(
         // APKMirror Button
         OutlinedButton(
             modifier = Modifier.fillMaxWidth(),
-            onClick = {
-                coroutineScope.launch {
-                    openAPKMirror(context, packageName, appName)
-                }
-            }
+            onClick = { openAPKMirror(context, packageName) }
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -82,11 +69,7 @@ fun AlternativeDownloads(
         // APKPure Button
         OutlinedButton(
             modifier = Modifier.fillMaxWidth(),
-            onClick = {
-                coroutineScope.launch {
-                    openAPKPure(context, packageName, appName)
-                }
-            }
+            onClick = { openAPKPure(context, packageName) }
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -106,70 +89,18 @@ fun AlternativeDownloads(
     }
 }
 
-private suspend fun openAPKMirror(context: Context, packageName: String, appName: String) {
-    withContext(Dispatchers.IO) {
-        try {
-            // Try to get download URL from APKMirror
-            val provider = APKMirrorProvider()
-            val versions = provider.getAppVersions(packageName, appName)
-            
-            if (versions.isNotEmpty()) {
-                // Open the first available version's download page
-                val downloadUrl = versions.first().downloadUrl
-                withContext(Dispatchers.Main) {
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(downloadUrl))
-                    context.startActivity(intent)
-                }
-            } else {
-                // Fallback to search page
-                val searchUrl = "https://www.apkmirror.com/?post_type=app_release&searchtype=apk&s=$packageName"
-                withContext(Dispatchers.Main) {
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(searchUrl))
-                    context.startActivity(intent)
-                }
-            }
-        } catch (e: Exception) {
-            // Fallback to direct search
-            val searchUrl = "https://www.apkmirror.com/?post_type=app_release&searchtype=apk&s=$packageName"
-            withContext(Dispatchers.Main) {
-                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(searchUrl))
-                context.startActivity(intent)
-            }
-        }
-    }
+private fun openAPKMirror(context: Context, packageName: String) {
+    // Direct link to APKMirror search for the package
+    val searchUrl = "https://www.apkmirror.com/?post_type=app_release&searchtype=apk&s=$packageName"
+    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(searchUrl))
+    context.startActivity(intent)
 }
 
-private suspend fun openAPKPure(context: Context, packageName: String, appName: String) {
-    withContext(Dispatchers.IO) {
-        try {
-            // Try to get download URL from APKPure
-            val provider = APKPureProvider()
-            val versions = provider.getAppVersions(packageName, appName)
-            
-            if (versions.isNotEmpty()) {
-                // Open the first available version's download page
-                val downloadUrl = versions.first().downloadUrl
-                withContext(Dispatchers.Main) {
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(downloadUrl))
-                    context.startActivity(intent)
-                }
-            } else {
-                // Fallback to search page
-                val searchUrl = "https://apkpure.com/search?q=$packageName"
-                withContext(Dispatchers.Main) {
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(searchUrl))
-                    context.startActivity(intent)
-                }
-            }
-        } catch (e: Exception) {
-            // Fallback to direct app page
-            val appUrl = "https://apkpure.com/$packageName"
-            withContext(Dispatchers.Main) {
-                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(appUrl))
-                context.startActivity(intent)
-            }
-        }
-    }
+private fun openAPKPure(context: Context, packageName: String) {
+    // Direct link to APKPure app page
+    val appUrl = "https://apkpure.com/search?q=$packageName"
+    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(appUrl))
+    context.startActivity(intent)
 }
 
 @Preview(showBackground = true)
