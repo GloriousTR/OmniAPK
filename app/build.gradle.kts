@@ -180,6 +180,7 @@ dependencies {
     // Google's Goodies
     implementation(libs.google.android.material)
     implementation(libs.google.protobuf.javalite)
+    implementation(libs.google.gson)
 
     // AndroidX
     implementation(libs.androidx.core.ktx)
