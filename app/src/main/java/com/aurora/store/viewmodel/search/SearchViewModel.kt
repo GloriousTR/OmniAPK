@@ -77,7 +77,7 @@ class SearchViewModel @Inject constructor(
                 nextStreamUrls.add(streamCluster.clusterNextPageUrl)
             }
             streamCluster.clusterAppList
-        }.distinctBy { app -> app.packageName }
+        }.distinctBy { app: App -> app.packageName }
 
         manualPager { page ->
             try {

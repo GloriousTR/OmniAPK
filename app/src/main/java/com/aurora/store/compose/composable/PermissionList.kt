@@ -139,7 +139,7 @@ fun PermissionList(
         permissions.sortedBy { it.optional }
             .groupBy { permission -> permission.optional }
             .forEach { (key, value) ->
-                stickyHeader {
+                stickyHeader(key = "header_$key") {
                     TextDividerComposable(
                         title = if (!key) {
                             stringResource(R.string.item_required)
