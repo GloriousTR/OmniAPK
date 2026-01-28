@@ -6,26 +6,36 @@
 package com.aurora.store.compose.ui.search
 
 import androidx.annotation.StringRes
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.input.clearText
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.material3.AppBarWithSearch
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExpandedDockedSearchBar
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.Text
@@ -43,16 +53,21 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
+import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.LoadState
@@ -60,7 +75,11 @@ import androidx.paging.PagingData
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
+import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.request.crossfade
 import com.aurora.extensions.emptyPagingItems
+import com.aurora.extensions.navigate
 import com.aurora.gplayapi.SearchSuggestEntry
 import com.aurora.gplayapi.data.models.App
 import com.aurora.store.R
@@ -68,10 +87,12 @@ import com.aurora.store.compose.composable.ContainedLoadingIndicator
 import com.aurora.store.compose.composable.Error
 import com.aurora.store.compose.composable.SearchSuggestionListItem
 import com.aurora.store.compose.composable.app.LargeAppListItem
+import com.aurora.store.compose.navigation.Screen
 import com.aurora.store.compose.preview.AppPreviewProvider
 import com.aurora.store.compose.preview.PreviewTemplate
 import com.aurora.store.compose.ui.details.AppDetailsScreen
 import com.aurora.store.data.model.SearchFilter
+import com.aurora.store.data.providers.FDroidApp
 import com.aurora.store.viewmodel.search.SearchViewModel
 import kotlin.random.Random
 import kotlinx.coroutines.android.awaitFrame
@@ -83,10 +104,12 @@ import kotlinx.coroutines.launch
 fun SearchScreen(onNavigateUp: () -> Unit, viewModel: SearchViewModel = hiltViewModel()) {
     val suggestions by viewModel.suggestions.collectAsStateWithLifecycle()
     val results = viewModel.apps.collectAsLazyPagingItems()
+    val fdroidApps by viewModel.fdroidApps.collectAsStateWithLifecycle()
 
     ScreenContent(
         suggestions = suggestions,
         results = results,
+        fdroidApps = fdroidApps,
         onNavigateUp = onNavigateUp,
         onSearch = { query -> viewModel.search(query) },
         onFetchSuggestions = { query -> viewModel.fetchSuggestions(query) },
@@ -99,12 +122,14 @@ fun SearchScreen(onNavigateUp: () -> Unit, viewModel: SearchViewModel = hiltView
 private fun ScreenContent(
     suggestions: List<SearchSuggestEntry> = emptyList(),
     results: LazyPagingItems<App> = emptyPagingItems(),
+    fdroidApps: List<FDroidApp> = emptyList(),
     onNavigateUp: () -> Unit = {},
     onFetchSuggestions: (String) -> Unit = {},
     onSearch: (String) -> Unit = {},
     onFilter: (filter: SearchFilter) -> Unit = {},
     isAnonymous: Boolean = true
 ) {
+    val context = LocalContext.current
     val textFieldState = rememberTextFieldState()
     val searchBarState = rememberSearchBarState()
     var isSearching by rememberSaveable { mutableStateOf(false) }
@@ -220,7 +245,10 @@ private fun ScreenContent(
                     }
 
                     else -> {
-                        if (isSearching && results.itemCount == 0) {
+                        val hasGoogleResults = results.itemCount > 0
+                        val hasFdroidResults = fdroidApps.isNotEmpty()
+                        
+                        if (isSearching && !hasGoogleResults && !hasFdroidResults) {
                             Error(
                                 modifier = Modifier.padding(paddingValues),
                                 painter = painterResource(R.drawable.ic_disclaimer),
@@ -228,15 +256,64 @@ private fun ScreenContent(
                             )
                         } else {
                             LazyColumn {
-                                items(
-                                    count = results.itemCount,
-                                    key = results.itemKey { it.id }
-                                ) { index ->
-                                    results[index]?.let { app ->
-                                        LargeAppListItem(
-                                            app = app,
-                                            onClick = { showDetailPane(app.packageName) }
+                                // F-Droid results section
+                                if (hasFdroidResults && isSearching) {
+                                    item(key = "fdroid_header") {
+                                        Text(
+                                            text = stringResource(R.string.title_open_source),
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            modifier = Modifier.padding(
+                                                horizontal = dimensionResource(R.dimen.padding_medium),
+                                                vertical = 8.dp
+                                            )
                                         )
+                                    }
+                                    
+                                    items(
+                                        items = fdroidApps,
+                                        key = { "fdroid_${it.packageName}" }
+                                    ) { fdroidApp ->
+                                        FDroidAppListItem(
+                                            app = fdroidApp,
+                                            onClick = {
+                                                context.navigate(Screen.FDroidAppDetails(fdroidApp.packageName))
+                                            }
+                                        )
+                                    }
+                                    
+                                    // Divider between sections
+                                    if (hasGoogleResults) {
+                                        item(key = "divider") {
+                                            Spacer(modifier = Modifier.height(16.dp))
+                                        }
+                                    }
+                                }
+                                
+                                // Google Play results section
+                                if (hasGoogleResults) {
+                                    item(key = "google_header") {
+                                        Text(
+                                            text = "Google Play",
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            modifier = Modifier.padding(
+                                                horizontal = dimensionResource(R.dimen.padding_medium),
+                                                vertical = 8.dp
+                                            )
+                                        )
+                                    }
+                                    
+                                    items(
+                                        count = results.itemCount,
+                                        key = results.itemKey { it.id }
+                                    ) { index ->
+                                        results[index]?.let { app ->
+                                            LargeAppListItem(
+                                                app = app,
+                                                onClick = { showDetailPane(app.packageName) }
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -406,6 +483,92 @@ private fun FilterHeader(
                 R.string.action_filter_rating,
                 R.string.app_info_downloads -> {
                     ExpandableFilterChip(filter = filter, isSelected = isSelected)
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Composable to display an F-Droid app in the search results list
+ */
+@Composable
+private fun FDroidAppListItem(
+    app: FDroidApp,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(
+                horizontal = dimensionResource(R.dimen.padding_medium),
+                vertical = 4.dp
+            )
+            .clickable(onClick = onClick),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(app.iconUrl)
+                    .crossfade(true)
+                    .build(),
+                contentDescription = app.name,
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(RoundedCornerShape(8.dp)),
+                placeholder = painterResource(R.drawable.ic_app_placeholder),
+                error = painterResource(R.drawable.ic_app_placeholder)
+            )
+            
+            Spacer(modifier = Modifier.width(12.dp))
+            
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = app.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                
+                Spacer(modifier = Modifier.height(2.dp))
+                
+                Text(
+                    text = app.summary,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                
+                Spacer(modifier = Modifier.height(4.dp))
+                
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "v${app.versionName}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = " • ",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = app.repoName,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
         }

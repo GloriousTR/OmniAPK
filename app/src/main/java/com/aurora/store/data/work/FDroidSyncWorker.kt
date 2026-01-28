@@ -56,7 +56,7 @@ class FDroidSyncWorker @AssistedInject constructor(
         Log.i(TAG, "Starting F-Droid sync")
         
         // Update global sync status
-        FDroidSyncStatus.updateState(SyncState.Syncing)
+        FDroidSyncStatus.updateState(SyncState.Syncing())
         
         try {
             setForeground(createForegroundInfo("Syncing F-Droid repositories..."))
@@ -76,6 +76,15 @@ class FDroidSyncWorker @AssistedInject constructor(
             enabledRepos.forEachIndexed { index, repo ->
                 try {
                     Log.i(TAG, "Syncing ${repo.name}...")
+                    
+                    // Update global sync status with detailed progress
+                    FDroidSyncStatus.updateSyncingProgress(
+                        currentRepo = repo.name,
+                        currentRepoIndex = index + 1,
+                        totalRepos = enabledRepos.size,
+                        appsProcessed = totalApps
+                    )
+                    
                     setForeground(createForegroundInfo("Syncing ${repo.name} (${index + 1}/${enabledRepos.size})"))
                     
                     val apps = fetchAppsFromRepo(repo, syncTime)

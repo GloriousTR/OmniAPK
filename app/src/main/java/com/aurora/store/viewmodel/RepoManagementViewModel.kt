@@ -44,7 +44,12 @@ class RepoManagementViewModel @Inject constructor(
     private val workInfoObserver = Observer<List<WorkInfo>> { workInfos ->
         val workInfo = workInfos?.firstOrNull()
         val newState = when (workInfo?.state) {
-            WorkInfo.State.RUNNING -> SyncState.Syncing
+            WorkInfo.State.RUNNING -> {
+                // Use the global sync status which has detailed progress info
+                FDroidSyncStatus.syncState.value.let { currentState ->
+                    if (currentState is SyncState.Syncing) currentState else SyncState.Syncing()
+                }
+            }
             WorkInfo.State.SUCCEEDED -> {
                 loadSyncInfo()
                 SyncState.Success
@@ -53,13 +58,16 @@ class RepoManagementViewModel @Inject constructor(
             else -> SyncState.Idle
         }
         _syncState.value = newState
-        // Also update the global sync status for other screens
-        FDroidSyncStatus.updateState(newState)
+        // Don't update global status here as it's managed by FDroidSyncWorker with detailed progress
+        if (newState !is SyncState.Syncing) {
+            FDroidSyncStatus.updateState(newState)
+        }
     }
     
     init {
         loadSyncInfo()
         observeSyncWork()
+        observeGlobalSyncStatus()
     }
     
     private fun loadSyncInfo() {
@@ -80,6 +88,17 @@ class RepoManagementViewModel @Inject constructor(
     
     private fun observeSyncWork() {
         workInfoLiveData.observeForever(workInfoObserver)
+    }
+    
+    private fun observeGlobalSyncStatus() {
+        // Collect from global sync status to get detailed progress
+        viewModelScope.launch {
+            FDroidSyncStatus.syncState.collect { globalState ->
+                if (globalState is SyncState.Syncing) {
+                    _syncState.value = globalState
+                }
+            }
+        }
     }
     
     override fun onCleared() {
@@ -129,7 +148,12 @@ class RepoManagementViewModel @Inject constructor(
 
 sealed class SyncState {
     data object Idle : SyncState()
-    data object Syncing : SyncState()
+    data class Syncing(
+        val currentRepo: String = "",
+        val currentRepoIndex: Int = 0,
+        val totalRepos: Int = 0,
+        val appsProcessed: Int = 0
+    ) : SyncState()
     data object Success : SyncState()
     data class Error(val message: String) : SyncState()
 }
@@ -166,6 +190,25 @@ object FDroidSyncStatus {
     fun updateAppCount(count: Int) {
         synchronized(lock) {
             _appCount.value = count
+        }
+    }
+    
+    /**
+     * Update the syncing state with repo progress details.
+     */
+    fun updateSyncingProgress(
+        currentRepo: String,
+        currentRepoIndex: Int,
+        totalRepos: Int,
+        appsProcessed: Int = 0
+    ) {
+        synchronized(lock) {
+            _syncState.value = SyncState.Syncing(
+                currentRepo = currentRepo,
+                currentRepoIndex = currentRepoIndex,
+                totalRepos = totalRepos,
+                appsProcessed = appsProcessed
+            )
         }
     }
     

@@ -124,7 +124,17 @@ class OpenSourceFragment : BaseFragment<FragmentOpenSourceBinding>() {
                 binding.syncProgress.visibility = View.VISIBLE
                 binding.syncIcon.visibility = View.GONE
                 binding.syncDismissBtn.visibility = View.GONE
-                binding.syncStatusText.text = getString(R.string.fdroid_syncing_status)
+                
+                // Show detailed progress with repo name
+                val statusText = if (state.currentRepo.isNotEmpty()) {
+                    getString(R.string.fdroid_syncing_repo_status, 
+                        state.currentRepo, 
+                        state.currentRepoIndex, 
+                        state.totalRepos)
+                } else {
+                    getString(R.string.fdroid_syncing_status)
+                }
+                binding.syncStatusText.text = statusText
             }
             is SyncState.Success -> {
                 binding.syncStatusBar.visibility = View.VISIBLE
