@@ -33,7 +33,11 @@ data class FDroidAppEntity(
     val suggestedVersionCode: Int = 0,
     val repoName: String = "",
     val repoAddress: String = "",
-    val syncTimestamp: Long = System.currentTimeMillis()
+    val syncTimestamp: Long = System.currentTimeMillis(),
+    val authorName: String = "",
+    val screenshots: List<String> = emptyList(),
+    val antiFeatures: List<String> = emptyList(),
+    val whatsNew: String = ""
 )
 
 /**

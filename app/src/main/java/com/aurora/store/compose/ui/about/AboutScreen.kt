@@ -80,20 +80,25 @@ private fun ScreenContent(onNavigateUp: () -> Unit = {}, onAboutAurora: () -> Un
         R.drawable.ic_libera_pay
     )
 
-    val links = linkURLS.mapIndexed { index, url ->
-        Link(
-            id = index,
-            title = linkTitles[index],
-            subtitle = linkSummary[index],
-            url = url,
-            icon = linkIcons[index]
-        )
+    val links = linkURLS.mapIndexedNotNull { index, url ->
+        // Only keep the first link (About)
+        if (index == 0) {
+            Link(
+                id = index,
+                title = linkTitles[index],
+                subtitle = linkSummary[index],
+                url = url,
+                icon = linkIcons[index]
+            )
+        } else {
+            null
+        }
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = stringResource(R.string.title_about),
+                title = stringResource(R.string.about_aurora_store_title),
                 onNavigateUp = onNavigateUp
             )
         }
@@ -160,6 +165,13 @@ private fun BrandHeader() {
             style = MaterialTheme.typography.bodyMedium,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
+        )
+        Text(
+            text = "Aurora Store, GloriousTR tarafından yükseltildi",
+            style = MaterialTheme.typography.labelSmall,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }

@@ -52,4 +52,17 @@ interface FDroidAppDao {
     
     @Query("DELETE FROM fdroid_apps WHERE repoAddress = :repoAddress")
     suspend fun deleteAppsByRepo(repoAddress: String)
+
+    // Version Management
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertVersion(version: FDroidVersionEntity)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertVersions(versions: List<FDroidVersionEntity>)
+
+    @Query("SELECT * FROM fdroid_versions WHERE packageName = :packageName ORDER BY versionCode DESC")
+    suspend fun getAppVersions(packageName: String): List<FDroidVersionEntity>
+    
+    @Query("DELETE FROM fdroid_versions WHERE packageName = :packageName")
+    suspend fun deleteVersionsByPackage(packageName: String)
 }

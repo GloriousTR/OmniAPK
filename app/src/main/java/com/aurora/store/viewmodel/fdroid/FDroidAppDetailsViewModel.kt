@@ -27,10 +27,14 @@ class FDroidAppDetailsViewModel @Inject constructor(
     private val _isLoading = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
+    private val _versions = MutableStateFlow<List<com.aurora.store.data.room.fdroid.FDroidVersionEntity>>(emptyList())
+    val versions: StateFlow<List<com.aurora.store.data.room.fdroid.FDroidVersionEntity>> = _versions.asStateFlow()
+
     fun loadApp(packageName: String) {
         viewModelScope.launch {
             _isLoading.value = true
             _app.value = fdroidAppDao.getAppByPackageName(packageName)
+            _versions.value = fdroidAppDao.getAppVersions(packageName)
             _isLoading.value = false
         }
     }

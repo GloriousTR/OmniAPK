@@ -103,10 +103,7 @@ class AlternativeDownloadViewModel @Inject constructor(
             try {
                 val downloadUrl = when (version.source) {
                     "APKMirror" -> apkMirrorProvider.getDownloadUrl(version.downloadPageUrl)
-                    "APKPure" -> apkPureProvider.getDownloadUrl(
-                        version.packageName,
-                        version.versionName
-                    )
+                    "APKPure" -> apkPureProvider.getDownloadUrlFromPage(version.downloadPageUrl)
                     else -> null
                 }
 

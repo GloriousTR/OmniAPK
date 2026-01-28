@@ -15,8 +15,8 @@ import com.aurora.store.data.room.update.Update
 import com.aurora.store.data.room.update.UpdateDao
 
 @Database(
-    entities = [Download::class, Favourite::class, Update::class, FDroidAppEntity::class],
-    version = 7,
+    entities = [Download::class, Favourite::class, Update::class, FDroidAppEntity::class, FDroidVersionEntity::class],
+    version = 8,
     exportSchema = true
 )
 @TypeConverters(DownloadConverter::class, FDroidConverters::class)

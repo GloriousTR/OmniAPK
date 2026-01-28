@@ -77,12 +77,11 @@ class FDroidSyncWorker @AssistedInject constructor(
                 try {
                     Log.i(TAG, "Syncing ${repo.name}...")
                     
-                    // Update global sync status with detailed progress
+                    // Update global status with detailed progress
                     FDroidSyncStatus.updateSyncingProgress(
                         currentRepo = repo.name,
                         currentRepoIndex = index + 1,
-                        totalRepos = enabledRepos.size,
-                        appsProcessed = totalApps
+                        totalRepos = enabledRepos.size
                     )
                     
                     setForeground(createForegroundInfo("Syncing ${repo.name} (${index + 1}/${enabledRepos.size})"))
@@ -149,11 +148,40 @@ class FDroidSyncWorker @AssistedInject constructor(
                 val appsObj = root.optJSONObject("apps")
                 val appMeta = appsObj?.optJSONObject(packageName)
                 
-                val name = appMeta?.optString("name", packageName) ?: packageName
-                val summary = appMeta?.optString("summary", "") ?: ""
-                val description = appMeta?.optString("description", "") ?: ""
-                val icon = appMeta?.optString("icon", "") ?: ""
-                val license = appMeta?.optString("license", "") ?: ""
+                // Handle localized strings (can be String or JSONObject)
+            val name = appMeta?.optLocalized("name", packageName) ?: packageName
+            val summary = appMeta?.optLocalized("summary", "") ?: ""
+            val description = appMeta?.optLocalized("description", "") ?: ""
+            
+            val icon = appMeta?.optString("icon", "") ?: ""
+                
+            // Additional Metadata
+            val authorName = appMeta?.optLocalized("authorName", "") ?: ""
+            // maintainer field is sometimes separate or same as author
+            
+            val whatsNew = appMeta?.optLocalized("whatsNew", "") ?: ""
+            
+            // Anti-features
+            val antiFeatures = mutableListOf<String>()
+            val antiFeaturesArray = appMeta?.optJSONArray("antiFeatures")
+            if (antiFeaturesArray != null) {
+                for (i in 0 until antiFeaturesArray.length()) {
+                    antiFeatures.add(antiFeaturesArray.getString(i))
+                }
+            }
+            
+            // Screenshots
+            val screenshots = mutableListOf<String>()
+            val screenshotsObj = appMeta?.optJSONObject("screenshots")
+            val phoneList = screenshotsObj?.optJSONArray("phone") ?: appMeta?.optJSONArray("screenshots")
+            
+            if (phoneList != null) {
+                for (i in 0 until phoneList.length()) {
+                    screenshots.add("${repo.address}/${phoneList.getString(i)}")
+                }
+            }
+
+            val license = appMeta?.optString("license", "") ?: ""
                 val webSite = appMeta?.optString("webSite", "") ?: ""
                 val sourceCode = appMeta?.optString("sourceCode", "") ?: ""
                 val lastUpdated = appMeta?.optLong("lastUpdated", 0) ?: 0
@@ -168,11 +196,52 @@ class FDroidSyncWorker @AssistedInject constructor(
                     }
                 }
                 
-                val versionName = latestVersion.optString("versionName", "")
-                val versionCode = latestVersion.optInt("versionCode", 0)
-                val apkName = latestVersion.optString("apkName", "")
-                val size = latestVersion.optLong("size", 0)
-                val minSdkVersion = latestVersion.optInt("minSdkVersion", 0)
+                // Version Management
+            val currentVersions = mutableListOf<FDroidVersionEntity>()
+            
+            // Loop through all versions in the package array
+            for (i in 0 until packageArray.length()) {
+                val versionObj = packageArray.getJSONObject(i)
+                val vCode = versionObj.optInt("versionCode", 0)
+                val vName = versionObj.optString("versionName", "")
+                val apkName = versionObj.optString("apkName", "")
+                val vSize = versionObj.optLong("size", 0)
+                val minSdk = versionObj.optInt("minSdkVersion", 0)
+                val targetSdk = versionObj.optInt("targetSdkVersion", 0)
+                val vAdded = versionObj.optLong("added", 0)
+                val hash = versionObj.optString("hash", "")
+                val hashType = versionObj.optString("hashType", "")
+                
+                if (apkName.isNotEmpty()) {
+                    currentVersions.add(
+                        FDroidVersionEntity(
+                            packageName = packageName,
+                            versionName = vName,
+                            versionCode = vCode,
+                            size = vSize,
+                            downloadUrl = "${repo.address}/$apkName",
+                            added = vAdded,
+                            minSdkVersion = minSdk,
+                            targetSdkVersion = targetSdk,
+                            hash = hash,
+                            hashType = hashType,
+                            repoName = repo.name,
+                            releaseNotes = "" // Per-version release notes are tricky in index-v1 JSON, usually in localized description
+                        )
+                    )
+                }
+            }
+            
+            // Save versions using DAO
+            if (currentVersions.isNotEmpty()) {
+                fdroidAppDao.insertVersions(currentVersions)
+            }
+            
+            val versionName = latestVersion.optString("versionName", "")
+            val versionCode = latestVersion.optInt("versionCode", 0)
+            val apkName = latestVersion.optString("apkName", "")
+            val size = latestVersion.optLong("size", 0)
+            val minSdkVersion = latestVersion.optInt("minSdkVersion", 0)
                 
                 val iconUrl = if (icon.isNotEmpty()) "${repo.address}/icons-640/$icon" else ""
                 val downloadUrl = if (apkName.isNotEmpty()) "${repo.address}/$apkName" else ""
@@ -198,7 +267,11 @@ class FDroidSyncWorker @AssistedInject constructor(
                         suggestedVersionCode = suggestedVersionCode,
                         repoName = repo.name,
                         repoAddress = repo.address,
-                        syncTimestamp = syncTime
+                        syncTimestamp = syncTime,
+                        authorName = authorName,
+                        screenshots = screenshots,
+                        antiFeatures = antiFeatures,
+                        whatsNew = whatsNew
                     )
                 )
             }
@@ -232,5 +305,18 @@ class FDroidSyncWorker @AssistedInject constructor(
     companion object {
         private const val TAG = "FDroidSyncWorker"
         const val WORK_NAME = "fdroid_sync"
+    }
+    private fun JSONObject.optLocalized(key: String, default: String): String {
+        val value = this.opt(key)
+        if (value is JSONObject) {
+            // Try English first, then fallback to any available locale
+            return value.optString("en-US")
+                .takeIf { it.isNotEmpty() }
+                ?: value.optString("en")
+                .takeIf { it.isNotEmpty() }
+                ?: value.keys().next()?.let { value.optString(it) }
+                ?: default
+        }
+        return if (value is String) value else default
     }
 }

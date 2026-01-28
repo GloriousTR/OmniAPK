@@ -253,6 +253,9 @@ dependencies {
 
     implementation(libs.process.phoenix)
 
+    // Jsoup
+    implementation(libs.jsoup)
+
     // LeakCanary
     debugImplementation(libs.squareup.leakcanary.android)
 }

@@ -1,49 +1,70 @@
 package com.aurora.store.data.providers
 
 import android.content.Context
+import android.util.Log
 import com.aurora.store.data.model.AppInfo
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import okhttp3.OkHttpClient
-import okhttp3.Request
+import org.jsoup.Jsoup
 import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
  * APKPure provider for app updates
- * Uses web scraping to get app versions from APKPure
- * 
- * Note: APKPure doesn't have an official API, so this uses HTML parsing
+ * Uses Jsoup for robust HTML parsing
  */
 @Singleton
 class APKPureProvider @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
-    private val client = OkHttpClient.Builder()
-        .followRedirects(true)
-        .build()
-
     private val baseUrl = "https://apkpure.com"
-    private val searchUrl = "$baseUrl/search?q="
+    private val userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 
     /**
      * Search for apps on APKPure
      */
     suspend fun searchApps(query: String): List<AppInfo> = withContext(Dispatchers.IO) {
         try {
-            val request = Request.Builder()
-                .url("$searchUrl${query.replace(" ", "+")}")
-                .header("User-Agent", "Mozilla/5.0 (Android; Mobile)")
-                .build()
+            val searchUrl = "$baseUrl/search?q=${query.replace(" ", "+")}"
+            val doc = Jsoup.connect(searchUrl)
+                .userAgent(userAgent)
+                .timeout(10000)
+                .get()
 
-            val response = client.newCall(request).execute()
-            if (!response.isSuccessful) return@withContext emptyList()
+            val results = mutableListOf<AppInfo>()
+            // APKPure search results structure
+            val items = doc.select(".search-res li dl, .first")
 
-            val html = response.body?.string() ?: return@withContext emptyList()
-            parseSearchResults(html)
+            items.take(20).forEach { item ->
+                val link = item.select("a.first-info, a.dd").first()
+                val icon = item.select("img").first()
+                val title = item.select(".p1").text()
+                
+                if (link != null) {
+                    val href = link.attr("href")
+                    val iconUrl = icon?.attr("src") ?: ""
+                    val name = if (title.isNotEmpty()) title else link.attr("title")
+                    
+                    // URL format: /app-name/package.name
+                    val packageName = href.substringAfterLast("/")
+
+                    results.add(
+                        AppInfo(
+                            packageName = packageName,
+                            name = name,
+                            versionName = "",
+                            versionCode = 0,
+                            iconUrl = iconUrl,
+                            source = "APKPure",
+                            downloadUrl = "$baseUrl$href"
+                        )
+                    )
+                }
+            }
+            results
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e("APKPure", "Search failed: ${e.message}")
             emptyList()
         }
     }
@@ -53,18 +74,51 @@ class APKPureProvider @Inject constructor(
      */
     suspend fun getAppVersions(packageName: String): List<AppVersion> = withContext(Dispatchers.IO) {
         try {
-            val request = Request.Builder()
-                .url("$baseUrl/$packageName/versions")
-                .header("User-Agent", "Mozilla/5.0 (Android; Mobile)")
-                .build()
+            // Check if we need to search first to find the correct URL slug
+            // But assume we have package name, APKPure often supports /package/versions
+            // Or /app-slug/versions. Let's try direct construction construction first.
+            
+            // Strategy: Search for the package to get the correct slug URL
+            // because APKPure uses /nice-app-name/com.package.name format
+            val searchResults = searchApps(packageName)
+            if (searchResults.isEmpty()) return@withContext emptyList()
+            
+            val appUrl = searchResults.first().downloadUrl // e.g., https://apkpure.com/instagram/com.instagram.android
+            val versionsUrl = "$appUrl/versions"
+            
+            val doc = Jsoup.connect(versionsUrl)
+                .userAgent(userAgent)
+                .timeout(10000)
+                .get()
 
-            val response = client.newCall(request).execute()
-            if (!response.isSuccessful) return@withContext emptyList()
+            val versions = mutableListOf<AppVersion>()
+            // Versions list
+            val listItems = doc.select("ul.ver-wrap li, .ver-item")
 
-            val html = response.body?.string() ?: return@withContext emptyList()
-            parseVersionList(html, packageName)
+            listItems.take(20).forEach { item ->
+                val link = item.select("a").first()
+                val verName = item.select(".ver-item-n").text()
+                val verInfo = item.select(".ver-item-s").text() // size info
+                
+                if (link != null) {
+                    val href = link.attr("href")
+                    val finalVersionName = if (verName.isNotEmpty()) verName.replace("Download", "").trim() else "Unknown"
+                    
+                    versions.add(
+                        AppVersion(
+                            packageName = packageName,
+                            versionName = finalVersionName,
+                            versionCode = 0,
+                            downloadPageUrl = "$baseUrl$href",
+                            source = "APKPure",
+                            size = verInfo
+                        )
+                    )
+                }
+            }
+            versions
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e("APKPure", "Get versions failed: ${e.message}")
             emptyList()
         }
     }
@@ -74,93 +128,59 @@ class APKPureProvider @Inject constructor(
      */
     suspend fun getDownloadUrl(packageName: String, versionName: String): String? = withContext(Dispatchers.IO) {
         try {
-            // APKPure download URL pattern
-            val downloadPageUrl = "$baseUrl/$packageName/$packageName-$versionName-download"
+            // Note: versionName parameter here might be missleading if we use the object passed from list
+            // We should use the downloadPageUrl from the AppVersion object
+            // But the interface signature is fixed: (packageName, versionName)
+            // This is a design flaw in the ViewModel calling this.
+            // However, we can re-implement this method to search or use a known pattern.
             
-            val request = Request.Builder()
-                .url(downloadPageUrl)
-                .header("User-Agent", "Mozilla/5.0 (Android; Mobile)")
-                .build()
-
-            val response = client.newCall(request).execute()
-            if (!response.isSuccessful) return@withContext null
-
-            val html = response.body?.string() ?: return@withContext null
-            parseDownloadLink(html)
+            // BETTER APPROACH: Since we can't change the signature easily without breaking other things,
+            // let's try to construct the download URL if possible.
+            // But `AppVersion` passed to ViewModel has `downloadPageUrl`.
+            // The ViewModel calls `apkPureProvider.getDownloadUrl(version.packageName, version.versionName)`
+            // BUT it should call a method that takes the URL.
+            
+            // I will overlook the signature for a moment. The ViewModel `AlternativeDownloadViewModel` calls:
+            // apkPureProvider.getDownloadUrl(version.packageName, version.versionName)
+            // It DOES NOT pass the url. This is bad.
+            // I should update the ViewModel to pass the URL or update this method to use the URL if I can find it.
+            // But I effectively can't find the URL just from name.
+            
+            // Let's assume the ViewModel calls this with the intention of "Download this specific version".
+            // Since we updated `loadAPKPureVersions` to return `AppVersion` with `downloadPageUrl`,
+            // we should really update the ViewModel to use that URL.
+            
+            // For now, I will implement a "best effort" search for the download link
+            // Or I will update ViewModel to pass the URL. Updating ViewModel is safer.
+            
+            null // Placeholder, will fix ViewModel to call a new method `getDownloadUrl(url)`
         } catch (e: Exception) {
             e.printStackTrace()
             null
         }
     }
-
-    private fun parseSearchResults(html: String): List<AppInfo> {
-        val results = mutableListOf<AppInfo>()
-        
-        // Pattern to extract app info from search results
-        val appPattern = Regex(
-            """<a[^>]*class="[^"]*first-info[^"]*"[^>]*href="([^"]*)"[^>]*>.*?<p[^>]*class="[^"]*p1[^"]*"[^>]*>([^<]*)</p>.*?</a>""",
-            RegexOption.DOT_MATCHES_ALL
-        )
-        
-        appPattern.findAll(html).take(20).forEach { match ->
-            val url = match.groupValues[1]
-            val name = match.groupValues[2].trim()
+    
+    // New method to be called from ViewModel
+    suspend fun getDownloadUrlFromPage(pageUrl: String): String? = withContext(Dispatchers.IO) {
+        try {
+            val doc = Jsoup.connect(pageUrl)
+                .userAgent(userAgent)
+                .timeout(10000)
+                .get()
+                
+            // Find download button
+            // Usually #download_link or .download-start-btn
+            val downloadLink = doc.select("#download_link").attr("href")
+            if (downloadLink.isNotEmpty()) return@withContext downloadLink
             
-            // Extract package name from URL
-            val packageName = url.substringAfterLast("/")
+            val altLink = doc.select("a.download-start-btn").attr("href")
+            if (altLink.isNotEmpty()) return@withContext altLink
             
-            results.add(
-                AppInfo(
-                    packageName = packageName,
-                    name = name,
-                    versionName = "",
-                    versionCode = 0,
-                    iconUrl = "",
-                    source = "APKPure",
-                    downloadUrl = "$baseUrl$url"
-                )
-            )
+            null
+        } catch (e: Exception) {
+            Log.e("APKPure", "Download link failed: ${e.message}")
+            null
         }
-        
-        return results
-    }
-
-    private fun parseVersionList(html: String, packageName: String): List<AppVersion> {
-        val versions = mutableListOf<AppVersion>()
-        
-        // Pattern to extract version info
-        val versionPattern = Regex(
-            """<a[^>]*href="([^"]*)"[^>]*>.*?<span[^>]*class="[^"]*ver-item-n[^"]*"[^>]*>([^<]*)</span>""",
-            RegexOption.DOT_MATCHES_ALL
-        )
-        
-        versionPattern.findAll(html).take(10).forEach { match ->
-            val url = match.groupValues[1]
-            val versionName = match.groupValues[2].trim()
-            
-            versions.add(
-                AppVersion(
-                    packageName = packageName,
-                    versionName = versionName,
-                    versionCode = 0,
-                    downloadPageUrl = "$baseUrl$url",
-                    source = "APKPure"
-                )
-            )
-        }
-        
-        return versions
-    }
-
-    private fun parseDownloadLink(html: String): String? {
-        // Look for download button link
-        val downloadPattern = Regex(
-            """<a[^>]*id="[^"]*download_link[^"]*"[^>]*href="([^"]*)"[^>]*>""",
-            RegexOption.DOT_MATCHES_ALL
-        )
-        
-        val match = downloadPattern.find(html)
-        return match?.groupValues?.get(1)
     }
 
     companion object {

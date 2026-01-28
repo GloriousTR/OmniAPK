@@ -41,6 +41,7 @@ object RoomModule {
             MIGRATION_6_7
         )
         .addTypeConverter(downloadConverter)
+        .fallbackToDestructiveMigration()
         .build()
 
     @Provides

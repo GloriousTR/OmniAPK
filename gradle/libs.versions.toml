@@ -23,6 +23,7 @@ gson = "2.10.1"
 hiddenapibypass = "6.1"
 hilt = "2.58"
 junit = "4.13.2"
+jsoup = "1.17.2"
 kotlin = "2.3.0"
 ksp = "2.3.4"
 ktlint = "14.0.1"
@@ -103,6 +104,7 @@ hilt-android-testing = { module = "com.google.dagger:hilt-android-testing", vers
 hilt-androidx-compiler = { module = "androidx.hilt:hilt-compiler", version.ref = "androidx-hilt" }
 hilt-androidx-work = { module = "androidx.hilt:hilt-work", version.ref = "androidx-hilt" }
 junit = { module = "junit:junit", version.ref = "junit" }
+jsoup = { module = "org.jsoup:jsoup", version.ref = "jsoup" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
 lsposed-hiddenapibypass = { module = "org.lsposed.hiddenapibypass:hiddenapibypass", version.ref = "hiddenapibypass" }
 process-phoenix = { module = "com.jakewharton:process-phoenix", version.ref = "processPhoenix" }
