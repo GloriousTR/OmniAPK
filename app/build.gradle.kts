@@ -249,9 +249,8 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.paging)
 
-    implementation(libs.process.phoenix)
 
-    "huaweiImplementation"(libs.huawei.hms.coreservice)
+    implementation(libs.process.phoenix)
 
     // LeakCanary
     debugImplementation(libs.squareup.leakcanary.android)
