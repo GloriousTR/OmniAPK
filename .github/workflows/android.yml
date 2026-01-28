@@ -77,13 +77,15 @@ jobs:
       run: |
         if [ -n "$KEYSTORE_BASE64" ]; then
           echo "Building RELEASE APK with signing..."
-          # Decode Keystore
-          echo "$KEYSTORE_BASE64" | base64 -d > app/release.keystore
+          # Decode Keystore to project root
+          echo "$KEYSTORE_BASE64" | base64 -d > release.keystore
           
-          # Create signing.properties for Aurora Store build script
+          # Create signing.properties in project root
+          # Note: storeFile in build.gradle.kts is resolved from app/ directory
+          # so we use ../release.keystore to point to project root
           echo "KEY_ALIAS=$KEY_ALIAS" > signing.properties
           echo "KEY_PASSWORD=$KEY_PASSWORD" >> signing.properties
-          echo "STORE_FILE=app/release.keystore" >> signing.properties
+          echo "STORE_FILE=../release.keystore" >> signing.properties
           
           # Build with --info for detailed output
           ./gradlew assembleVanillaRelease --info --stacktrace --no-configuration-cache
