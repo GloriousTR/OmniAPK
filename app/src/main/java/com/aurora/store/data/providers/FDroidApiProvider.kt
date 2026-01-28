@@ -10,6 +10,7 @@ import android.util.Log
 import com.aurora.store.data.model.FDroidRepo
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -23,7 +24,8 @@ import javax.inject.Singleton
  */
 @Singleton
 class FDroidApiProvider @Inject constructor(
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
+    private val fdroidProvider: FDroidProvider
 ) {
     private val client = OkHttpClient.Builder()
         .connectTimeout(30, TimeUnit.SECONDS)
@@ -41,6 +43,8 @@ class FDroidApiProvider @Inject constructor(
     suspend fun fetchApps(repo: FDroidRepo): List<FDroidApp> = withContext(Dispatchers.IO) {
         try {
             val indexUrl = "${repo.address}/index-v1.json"
+            Log.d(TAG, "Fetching index from: $indexUrl")
+            
             val request = Request.Builder()
                 .url(indexUrl)
                 .header("User-Agent", "OmniAPK/1.0")
@@ -53,6 +57,7 @@ class FDroidApiProvider @Inject constructor(
             }
 
             val json = response.body?.string() ?: return@withContext emptyList()
+            Log.d(TAG, "Received ${json.length} bytes from ${repo.name}")
             parseIndex(json, repo)
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching apps from ${repo.name}", e)
@@ -61,20 +66,43 @@ class FDroidApiProvider @Inject constructor(
     }
 
     /**
+     * Get enabled repos from FDroidProvider
+     */
+    private suspend fun getEnabledRepos(): List<FDroidRepo> {
+        return fdroidProvider.repos.first().filter { it.enabled }
+    }
+
+    /**
+     * Check if there are any enabled repos
+     */
+    suspend fun hasEnabledRepos(): Boolean {
+        return getEnabledRepos().isNotEmpty()
+    }
+
+    /**
      * Fetch apps from all enabled repos
      */
-    suspend fun fetchAllApps(): List<FDroidApp> = withContext(Dispatchers.IO) {
+    suspend fun fetchAllApps(forceRefresh: Boolean = false): List<FDroidApp> = withContext(Dispatchers.IO) {
         val currentTime = System.currentTimeMillis()
-        if (cachedApps.isNotEmpty() && (currentTime - lastFetchTime) < cacheValidityMs) {
+        if (!forceRefresh && cachedApps.isNotEmpty() && (currentTime - lastFetchTime) < cacheValidityMs) {
+            Log.d(TAG, "Returning ${cachedApps.size} cached apps")
             return@withContext cachedApps
         }
 
-        val allApps = mutableListOf<FDroidApp>()
-        val enabledRepos = FDroidRepo.DEFAULT_REPOS.filter { it.enabled }.take(5) // Limit to 5 repos for performance
+        val enabledRepos = getEnabledRepos().take(5) // Limit to 5 repos for performance
+        Log.d(TAG, "Fetching from ${enabledRepos.size} enabled repos")
+        
+        if (enabledRepos.isEmpty()) {
+            Log.w(TAG, "No enabled repos found")
+            return@withContext emptyList()
+        }
 
+        val allApps = mutableListOf<FDroidApp>()
         for (repo in enabledRepos) {
             try {
+                Log.d(TAG, "Fetching apps from: ${repo.name}")
                 val apps = fetchApps(repo)
+                Log.d(TAG, "Got ${apps.size} apps from ${repo.name}")
                 allApps.addAll(apps)
             } catch (e: Exception) {
                 Log.e(TAG, "Error fetching from ${repo.name}", e)
@@ -83,7 +111,17 @@ class FDroidApiProvider @Inject constructor(
 
         cachedApps = allApps.distinctBy { it.packageName }
         lastFetchTime = currentTime
+        Log.d(TAG, "Total unique apps: ${cachedApps.size}")
         cachedApps
+    }
+
+    /**
+     * Force refresh - clear cache and fetch again
+     */
+    suspend fun refreshApps(): List<FDroidApp> {
+        cachedApps = emptyList()
+        lastFetchTime = 0
+        return fetchAllApps(forceRefresh = true)
     }
 
     /**
