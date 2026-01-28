@@ -21,6 +21,7 @@ import com.aurora.store.data.model.FDroidRepo
 import com.aurora.store.data.providers.FDroidProvider
 import com.aurora.store.data.room.fdroid.FDroidAppDao
 import com.aurora.store.data.room.fdroid.FDroidAppEntity
+import com.aurora.store.data.room.fdroid.FDroidVersionEntity
 import com.aurora.store.viewmodel.FDroidSyncStatus
 import com.aurora.store.viewmodel.SyncState
 import dagger.assisted.Assisted

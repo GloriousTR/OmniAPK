@@ -36,7 +36,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Download
@@ -111,15 +110,8 @@ fun FDroidAppDetailsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(text = app?.name ?: "") },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateUp) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(id = R.string.action_back)
-                        )
-                    }
-                },
+                title = app?.name ?: "",
+                onNavigateUp = onNavigateUp,
                 actions = {
                     IconButton(onClick = {
                         val shareIntent = Intent().apply {
@@ -230,9 +222,9 @@ fun AppHeaderSection(app: FDroidAppEntity) {
             model = ImageRequest.Builder(LocalContext.current)
                 .data(app.iconUrl)
                 .crossfade(true)
-                .placeholder(R.drawable.ic_app_placeholder)
-                .error(R.drawable.ic_app_placeholder)
                 .build(),
+            placeholder = painterResource(R.drawable.ic_app_placeholder),
+            error = painterResource(R.drawable.ic_app_placeholder),
             contentDescription = null,
             modifier = Modifier
                 .size(84.dp)
