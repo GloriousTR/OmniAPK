@@ -161,17 +161,10 @@ private fun BrandHeader() {
             overflow = TextOverflow.Ellipsis
         )
         Text(
-            text = stringResource(R.string.made_with_love, String(Character.toChars(0x2764))),
+            text = "Aurora Store, GloriousTR tarafından yükseltildi",
             style = MaterialTheme.typography.bodyMedium,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
-        )
-        Text(
-            text = "Aurora Store, GloriousTR tarafından yükseltildi",
-            style = MaterialTheme.typography.labelSmall,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }

@@ -134,16 +134,28 @@ fun SyncCard(
                             )
                         }
                         is SyncState.Syncing -> {
+                            val progressPercent = if (syncState.totalRepos > 0) {
+                                ((syncState.currentRepoIndex.toFloat() / syncState.totalRepos.toFloat()) * 100).toInt()
+                            } else 0
                             val syncingText = if (syncState.currentRepo.isNotEmpty()) {
-                                "Syncing ${syncState.currentRepo} (${syncState.currentRepoIndex}/${syncState.totalRepos})..."
+                                "Syncing ${syncState.currentRepo} (${syncState.currentRepoIndex}/${syncState.totalRepos}) - %$progressPercent"
                             } else {
                                 "Syncing..."
                             }
-                            Text(
-                                text = syncingText,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.primary
-                            )
+                            Column {
+                                Text(
+                                    text = syncingText,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                if (syncState.totalRepos > 0) {
+                                    LinearProgressIndicator(
+                                        progress = { syncState.currentRepoIndex.toFloat() / syncState.totalRepos.toFloat() },
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                }
+                            }
                         }
                         is SyncState.Success -> {
                             Text(

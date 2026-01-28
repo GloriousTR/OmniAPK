@@ -75,6 +75,13 @@ fun AlternativeDownloads(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val versions by viewModel.versions.collectAsStateWithLifecycle()
     val progress by viewModel.downloadProgress.collectAsStateWithLifecycle()
+    val currentPage by viewModel.currentPage.collectAsStateWithLifecycle()
+    val totalPages by viewModel.totalPages.collectAsStateWithLifecycle()
+    
+    // Preload versions in background when component mounts
+    LaunchedEffect(packageName) {
+        viewModel.preloadVersions(packageName)
+    }
 
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -143,6 +150,9 @@ fun AlternativeDownloads(
             state = state,
             versions = versions,
             progress = progress,
+            currentPage = currentPage,
+            totalPages = totalPages,
+            onPageChange = { page -> viewModel.goToPage(page) },
             onVersionSelected = { version -> viewModel.downloadVersion(version) },
             onDismiss = {
                 showDialog = false
@@ -159,6 +169,9 @@ private fun AlternativeDownloadDialog(
     state: AlternativeDownloadState,
     versions: List<AppVersion>,
     progress: Int,
+    currentPage: Int,
+    totalPages: Int,
+    onPageChange: (Int) -> Unit,
     onVersionSelected: (AppVersion) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -197,7 +210,7 @@ private fun AlternativeDownloadDialog(
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             LazyColumn(
-                                modifier = Modifier.height(300.dp),
+                                modifier = Modifier.height(250.dp),
                                 verticalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 items(versions) { version ->
@@ -205,6 +218,47 @@ private fun AlternativeDownloadDialog(
                                         version = version,
                                         onClick = { onVersionSelected(version) }
                                     )
+                                }
+                            }
+                            
+                            // Pagination controls
+                            if (totalPages > 1) {
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.Center,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    TextButton(
+                                        onClick = { onPageChange(currentPage - 1) },
+                                        enabled = currentPage > 1
+                                    ) {
+                                        Text("◀")
+                                    }
+                                    
+                                    // Page numbers
+                                    val pageRange = (maxOf(1, currentPage - 2)..minOf(totalPages, currentPage + 2))
+                                    pageRange.forEach { page ->
+                                        TextButton(
+                                            onClick = { onPageChange(page) }
+                                        ) {
+                                            Text(
+                                                text = page.toString(),
+                                                fontWeight = if (page == currentPage) FontWeight.Bold else FontWeight.Normal,
+                                                color = if (page == currentPage) 
+                                                    MaterialTheme.colorScheme.primary 
+                                                else 
+                                                    MaterialTheme.colorScheme.onSurface
+                                            )
+                                        }
+                                    }
+                                    
+                                    TextButton(
+                                        onClick = { onPageChange(currentPage + 1) },
+                                        enabled = currentPage < totalPages
+                                    ) {
+                                        Text("▶")
+                                    }
                                 }
                             }
                         }
