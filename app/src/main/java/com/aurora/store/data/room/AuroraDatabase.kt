@@ -11,6 +11,7 @@ import com.aurora.store.data.room.favourite.FavouriteDao
 import com.aurora.store.data.room.fdroid.FDroidAppDao
 import com.aurora.store.data.room.fdroid.FDroidAppEntity
 import com.aurora.store.data.room.fdroid.FDroidConverters
+import com.aurora.store.data.room.fdroid.FDroidVersionEntity
 import com.aurora.store.data.room.update.Update
 import com.aurora.store.data.room.update.UpdateDao
 
