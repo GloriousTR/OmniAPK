@@ -21,7 +21,8 @@ import com.aurora.store.data.model.FDroidRepo
 import com.aurora.store.data.providers.FDroidProvider
 import com.aurora.store.data.room.fdroid.FDroidAppDao
 import com.aurora.store.data.room.fdroid.FDroidAppEntity
-import com.aurora.store.util.NotificationUtil
+import com.aurora.store.viewmodel.FDroidSyncStatus
+import com.aurora.store.viewmodel.SyncState
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.Dispatchers
@@ -54,6 +55,9 @@ class FDroidSyncWorker @AssistedInject constructor(
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
         Log.i(TAG, "Starting F-Droid sync")
         
+        // Update global sync status
+        FDroidSyncStatus.updateState(SyncState.Syncing)
+        
         try {
             setForeground(createForegroundInfo("Syncing F-Droid repositories..."))
             
@@ -62,6 +66,7 @@ class FDroidSyncWorker @AssistedInject constructor(
             
             if (enabledRepos.isEmpty()) {
                 Log.w(TAG, "No enabled repos, nothing to sync")
+                FDroidSyncStatus.updateState(SyncState.Idle)
                 return@withContext Result.success(workDataOf("apps_synced" to 0))
             }
             
@@ -86,12 +91,18 @@ class FDroidSyncWorker @AssistedInject constructor(
             
             Log.i(TAG, "F-Droid sync complete. Total apps: $totalApps")
             
+            // Update global sync status with results
+            FDroidSyncStatus.updateAppCount(totalApps)
+            FDroidSyncStatus.updateLastSyncTime(syncTime)
+            FDroidSyncStatus.updateState(SyncState.Success)
+            
             // Notify completion
             notifyComplete(totalApps)
             
             return@withContext Result.success(workDataOf("apps_synced" to totalApps))
         } catch (e: Exception) {
             Log.e(TAG, "F-Droid sync failed", e)
+            FDroidSyncStatus.updateState(SyncState.Error(e.message ?: "Unknown error"))
             return@withContext Result.failure()
         }
     }
