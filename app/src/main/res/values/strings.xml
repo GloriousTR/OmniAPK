@@ -28,6 +28,14 @@
   <string name="download_via_apkpure">Download via APKPure</string>
   <string name="downloading_from">Downloading from %s…</string>
   <string name="action_get">Get</string>
+  <string name="alternative_loading_versions">Loading versions…</string>
+  <string name="alternative_no_versions">No versions found</string>
+  <string name="alternative_select_version">Select a version to download:</string>
+  <string name="alternative_downloading">Downloading…</string>
+  <string name="alternative_download_complete">Download complete! Installing…</string>
+  <string name="alternative_installing">Installing…</string>
+  <string name="alternative_install_success">Installation started</string>
+  <string name="alternative_install_error">Installation failed: %s</string>
   <string name="fdroid_no_apps_synced">No apps synced yet.\nGo to Settings → F-Droid Repositories\nand tap Sync to download apps.</string>
   <string name="fdroid_sync_title">F-Droid Sync</string>
   <string name="fdroid_sync_complete">Synced %d apps from F-Droid repositories</string>
