@@ -91,10 +91,8 @@ class FDroidSyncWorker @AssistedInject constructor(
             
             Log.i(TAG, "F-Droid sync complete. Total apps: $totalApps")
             
-            // Update global sync status with results
-            FDroidSyncStatus.updateAppCount(totalApps)
-            FDroidSyncStatus.updateLastSyncTime(syncTime)
-            FDroidSyncStatus.updateState(SyncState.Success)
+            // Update global sync status with results atomically
+            FDroidSyncStatus.updateSyncResult(SyncState.Success, totalApps, syncTime)
             
             // Notify completion
             notifyComplete(totalApps)

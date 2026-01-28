@@ -70,7 +70,8 @@ class RepoManagementViewModel @Inject constructor(
                 FDroidSyncStatus.updateAppCount(_appCount.value)
                 _lastSyncTime.value?.let { FDroidSyncStatus.updateLastSyncTime(it) }
             } catch (e: Exception) {
-                // Handle database errors gracefully
+                // Log database errors for debugging
+                android.util.Log.e("RepoManagementViewModel", "Failed to load sync info", e)
                 _lastSyncTime.value = null
                 _appCount.value = 0
             }
@@ -135,7 +136,8 @@ sealed class SyncState {
 
 /**
  * Global sync status object that can be observed from any screen
- * to show sync status in the status bar
+ * to show sync status in the status bar.
+ * Thread-safe: All updates are synchronized to ensure consistency.
  */
 object FDroidSyncStatus {
     private val _syncState = MutableStateFlow<SyncState>(SyncState.Idle)
@@ -147,15 +149,35 @@ object FDroidSyncStatus {
     private val _appCount = MutableStateFlow(0)
     val appCount: StateFlow<Int> = _appCount.asStateFlow()
     
+    private val lock = Any()
+    
     fun updateState(state: SyncState) {
-        _syncState.value = state
+        synchronized(lock) {
+            _syncState.value = state
+        }
     }
     
     fun updateLastSyncTime(time: Long) {
-        _lastSyncTime.value = time
+        synchronized(lock) {
+            _lastSyncTime.value = time
+        }
     }
     
     fun updateAppCount(count: Int) {
-        _appCount.value = count
+        synchronized(lock) {
+            _appCount.value = count
+        }
+    }
+    
+    /**
+     * Atomically update all sync status fields at once.
+     * Use this when updating multiple fields together to ensure consistency.
+     */
+    fun updateSyncResult(state: SyncState, appCount: Int, lastSyncTime: Long) {
+        synchronized(lock) {
+            _appCount.value = appCount
+            _lastSyncTime.value = lastSyncTime
+            _syncState.value = state
+        }
     }
 }

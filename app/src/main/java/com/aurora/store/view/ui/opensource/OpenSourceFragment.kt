@@ -34,9 +34,7 @@ import com.google.android.material.tabs.TabLayoutMediator
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
 import java.util.Date
-import java.util.Locale
 
 @AndroidEntryPoint
 class OpenSourceFragment : BaseFragment<FragmentOpenSourceBinding>() {
@@ -147,17 +145,14 @@ class OpenSourceFragment : BaseFragment<FragmentOpenSourceBinding>() {
                 binding.syncStatusText.text = getString(R.string.fdroid_sync_error_status, state.message)
             }
             is SyncState.Idle -> {
-                // Keep hidden when idle, unless user dismissed a previous status
-                if (binding.syncStatusBar.visibility != View.GONE) {
-                    binding.syncStatusBar.visibility = View.GONE
-                }
+                // Hide status bar when idle
+                binding.syncStatusBar.visibility = View.GONE
             }
         }
     }
 
     private fun formatTime(timestamp: Long): String {
-        val sdf = SimpleDateFormat("HH:mm", Locale.getDefault())
-        return sdf.format(Date(timestamp))
+        return android.text.format.DateFormat.getTimeFormat(requireContext()).format(Date(timestamp))
     }
 
     override fun onDestroyView() {
