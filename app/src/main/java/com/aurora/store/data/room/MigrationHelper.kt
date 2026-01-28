@@ -30,6 +30,10 @@ object MigrationHelper {
         override fun migrate(db: SupportSQLiteDatabase) = migrateFrom5To6(db)
     }
 
+    val MIGRATION_6_7 = object : Migration(6, 7) {
+        override fun migrate(db: SupportSQLiteDatabase) = migrateFrom6To7(db)
+    }
+
     private const val TAG = "MigrationHelper"
 
     private fun migrateFrom1To2(database: SupportSQLiteDatabase) {
@@ -108,6 +112,44 @@ object MigrationHelper {
             database.setTransactionSuccessful()
         } catch (exception: Exception) {
             Log.e(TAG, "Failed while migrating from database version 5 to 6", exception)
+        } finally {
+            database.endTransaction()
+        }
+    }
+
+    /**
+     * Add fdroid_apps table for caching F-Droid repository apps.
+     */
+    private fun migrateFrom6To7(database: SupportSQLiteDatabase) {
+        database.beginTransaction()
+        try {
+            database.execSQL(
+                """CREATE TABLE IF NOT EXISTS `fdroid_apps` (
+                    `packageName` TEXT NOT NULL PRIMARY KEY,
+                    `name` TEXT NOT NULL,
+                    `summary` TEXT NOT NULL,
+                    `description` TEXT NOT NULL DEFAULT '',
+                    `versionName` TEXT NOT NULL,
+                    `versionCode` INTEGER NOT NULL,
+                    `iconUrl` TEXT NOT NULL,
+                    `downloadUrl` TEXT NOT NULL,
+                    `license` TEXT NOT NULL DEFAULT '',
+                    `webSite` TEXT NOT NULL DEFAULT '',
+                    `sourceCode` TEXT NOT NULL DEFAULT '',
+                    `categories` TEXT NOT NULL DEFAULT '',
+                    `size` INTEGER NOT NULL DEFAULT 0,
+                    `minSdkVersion` INTEGER NOT NULL DEFAULT 0,
+                    `lastUpdated` INTEGER NOT NULL DEFAULT 0,
+                    `added` INTEGER NOT NULL DEFAULT 0,
+                    `suggestedVersionCode` INTEGER NOT NULL DEFAULT 0,
+                    `repoName` TEXT NOT NULL DEFAULT '',
+                    `repoAddress` TEXT NOT NULL DEFAULT '',
+                    `syncTimestamp` INTEGER NOT NULL DEFAULT 0
+                )"""
+            )
+            database.setTransactionSuccessful()
+        } catch (exception: Exception) {
+            Log.e(TAG, "Failed while migrating from database version 6 to 7", exception)
         } finally {
             database.endTransaction()
         }

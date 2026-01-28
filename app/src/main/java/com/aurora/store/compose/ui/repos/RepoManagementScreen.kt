@@ -7,15 +7,20 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.aurora.store.data.model.FDroidRepo
 import com.aurora.store.viewmodel.RepoManagementViewModel
+import com.aurora.store.viewmodel.SyncState
+import java.text.SimpleDateFormat
+import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -24,16 +29,17 @@ fun RepoManagementScreen(
     onNavigateUp: () -> Unit
 ) {
     val repos by viewModel.repos.collectAsStateWithLifecycle()
+    val syncState by viewModel.syncState.collectAsStateWithLifecycle()
+    val lastSyncTime by viewModel.lastSyncTime.collectAsStateWithLifecycle()
+    val appCount by viewModel.appCount.collectAsStateWithLifecycle()
+    
     var showAddDialog by remember { mutableStateOf(false) }
+    val enabledCount = repos.count { it.enabled }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("F-Droid Repositories") },
-                navigationIcon = {
-                    // Back button handled by Fragment hosting this composition usually, 
-                    // but we can add an IconButton here calling onNavigateUp
-                },
                 actions = {
                     IconButton(onClick = { viewModel.resetDefaults() }) {
                         Icon(Icons.Default.Refresh, contentDescription = "Reset Defaults")
@@ -47,19 +53,33 @@ fun RepoManagementScreen(
             }
         }
     ) { padding ->
-        LazyColumn(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+                .padding(padding)
         ) {
-            items(repos, key = { it.id }) { repo ->
-                RepoItem(
-                    repo = repo,
-                    onToggle = { enabled -> viewModel.toggleRepo(repo, enabled) },
-                    onDelete = { viewModel.removeRepo(repo) }
-                )
+            // Sync Card
+            SyncCard(
+                syncState = syncState,
+                lastSyncTime = lastSyncTime,
+                appCount = appCount,
+                enabledCount = enabledCount,
+                onSyncClick = { viewModel.startSync() }
+            )
+            
+            // Repos List
+            LazyColumn(
+                modifier = Modifier.weight(1f),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(repos, key = { it.id }) { repo ->
+                    RepoItem(
+                        repo = repo,
+                        onToggle = { enabled -> viewModel.toggleRepo(repo, enabled) },
+                        onDelete = { viewModel.removeRepo(repo) }
+                    )
+                }
             }
         }
 
@@ -71,6 +91,101 @@ fun RepoManagementScreen(
                     showAddDialog = false
                 }
             )
+        }
+    }
+}
+
+@Composable
+fun SyncCard(
+    syncState: SyncState,
+    lastSyncTime: Long?,
+    appCount: Int,
+    enabledCount: Int,
+    onSyncClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Sync Status",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    
+                    when (syncState) {
+                        is SyncState.Idle -> {
+                            Text(
+                                text = if (lastSyncTime != null) {
+                                    "Last sync: ${formatTime(lastSyncTime)}"
+                                } else {
+                                    "Not synced yet"
+                                },
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        is SyncState.Syncing -> {
+                            Text(
+                                text = "Syncing...",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        is SyncState.Success -> {
+                            Text(
+                                text = "Sync completed!",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        is SyncState.Error -> {
+                            Text(
+                                text = syncState.message,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.height(4.dp))
+                    
+                    Text(
+                        text = "$enabledCount repos enabled • $appCount apps cached",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                
+                Button(
+                    onClick = onSyncClick,
+                    enabled = syncState !is SyncState.Syncing && enabledCount > 0
+                ) {
+                    if (syncState is SyncState.Syncing) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Icon(
+                            Icons.Default.Sync,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Sync")
+                }
+            }
         }
     }
 }
@@ -155,4 +270,9 @@ fun AddRepoDialog(
             }
         }
     )
+}
+
+private fun formatTime(timestamp: Long): String {
+    val sdf = SimpleDateFormat("dd MMM, HH:mm", Locale.getDefault())
+    return sdf.format(Date(timestamp))
 }
