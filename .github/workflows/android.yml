@@ -51,15 +51,12 @@ jobs:
         echo "VERSION=$NEXT_VERSION" >> $GITHUB_OUTPUT
 
     - name: Setup Gradle
-      uses: gradle/actions/setup-gradle@v3
+      uses: gradle/actions/setup-gradle@v4
       with:
-        gradle-version: '8.11.1'
-    
-    - name: Fix Gradle Wrapper
-      run: gradle wrapper --gradle-version 8.11.1
+        cache-disabled: true
     
     - name: Grant execute permission for gradlew
-      run: chmod +x ./gradlew || true
+      run: chmod +x ./gradlew
 
     - name: Update Version in Gradle
       env: 
@@ -84,15 +81,15 @@ jobs:
           echo "$KEYSTORE_BASE64" | base64 -d > app/release.keystore
           
           # Create signing.properties for Aurora Store build script
-          echo "KEY_ALIAS=$KEY_ALIAS" > app/signing.properties
-          echo "KEY_PASSWORD=$KEY_PASSWORD" >> app/signing.properties
-          echo "STORE_FILE=release.keystore" >> app/signing.properties
+          echo "KEY_ALIAS=$KEY_ALIAS" > signing.properties
+          echo "KEY_PASSWORD=$KEY_PASSWORD" >> signing.properties
+          echo "STORE_FILE=app/release.keystore" >> signing.properties
           
-          # Build
-          ./gradlew clean assembleRelease --stacktrace --no-configuration-cache
+          # Build with --info for detailed output
+          ./gradlew assembleVanillaRelease --info --stacktrace --no-configuration-cache
         else
           echo "Building DEBUG APK (no keystore configured)..."
-          ./gradlew clean assembleDebug --stacktrace --no-configuration-cache
+          ./gradlew assembleVanillaDebug --info --stacktrace --no-configuration-cache
         fi
       
     - name: List Build Outputs
