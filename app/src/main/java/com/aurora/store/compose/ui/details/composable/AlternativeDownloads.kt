@@ -233,7 +233,7 @@ private fun AlternativeDownloadDialog(
                                         onClick = { onPageChange(currentPage - 1) },
                                         enabled = currentPage > 1
                                     ) {
-                                        Text("◀")
+                                        Text("<")
                                     }
                                     
                                     // Page numbers
@@ -257,7 +257,7 @@ private fun AlternativeDownloadDialog(
                                         onClick = { onPageChange(currentPage + 1) },
                                         enabled = currentPage < totalPages
                                     ) {
-                                        Text("▶")
+                                        Text(">")
                                     }
                                 }
                             }

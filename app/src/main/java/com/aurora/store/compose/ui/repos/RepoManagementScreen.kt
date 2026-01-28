@@ -138,7 +138,7 @@ fun SyncCard(
                                 ((syncState.currentRepoIndex.toFloat() / syncState.totalRepos.toFloat()) * 100).toInt()
                             } else 0
                             val syncingText = if (syncState.currentRepo.isNotEmpty()) {
-                                "Syncing ${syncState.currentRepo} (${syncState.currentRepoIndex}/${syncState.totalRepos}) - %$progressPercent"
+                                "Syncing ${syncState.currentRepo} (${syncState.currentRepoIndex}/${syncState.totalRepos}) - ${progressPercent}%"
                             } else {
                                 "Syncing..."
                             }

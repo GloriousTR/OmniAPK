@@ -15,6 +15,7 @@ import com.aurora.store.data.providers.AppVersion
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -44,9 +45,6 @@ object AlternativeVersionCache {
     
     private val cache = ConcurrentHashMap<String, CachedVersions>()
     
-    private val _cacheState = MutableStateFlow<Map<String, CachedVersions>>(emptyMap())
-    val cacheState: StateFlow<Map<String, CachedVersions>> = _cacheState.asStateFlow()
-    
     fun getCached(packageName: String): CachedVersions? {
         val cached = cache[packageName] ?: return null
         // Check if cache is still valid
@@ -57,43 +55,50 @@ object AlternativeVersionCache {
         return cached
     }
     
-    fun setLoading(packageName: String) {
-        val existing = cache[packageName] ?: CachedVersions()
-        cache[packageName] = existing.copy(isLoading = true)
-        _cacheState.value = cache.toMap()
+    /**
+     * Atomically set loading state, returns true if this call initiated loading
+     */
+    fun setLoadingIfNotAlready(packageName: String): Boolean {
+        var initiatedLoading = false
+        cache.compute(packageName) { _, existing ->
+            if (existing?.isLoading == true) {
+                existing // Already loading, don't change
+            } else {
+                initiatedLoading = true
+                (existing ?: CachedVersions()).copy(isLoading = true)
+            }
+        }
+        return initiatedLoading
     }
     
     fun updateAPKMirrorVersions(packageName: String, versions: List<AppVersion>) {
-        val existing = cache[packageName] ?: CachedVersions()
-        cache[packageName] = existing.copy(
-            apkMirrorVersions = versions,
-            timestamp = System.currentTimeMillis(),
-            isLoading = false
-        )
-        _cacheState.value = cache.toMap()
+        cache.compute(packageName) { _, existing ->
+            (existing ?: CachedVersions()).copy(
+                apkMirrorVersions = versions,
+                timestamp = System.currentTimeMillis()
+            )
+        }
         Log.d(TAG, "Cached ${versions.size} APKMirror versions for $packageName")
     }
     
     fun updateAPKPureVersions(packageName: String, versions: List<AppVersion>) {
-        val existing = cache[packageName] ?: CachedVersions()
-        cache[packageName] = existing.copy(
-            apkPureVersions = versions,
-            timestamp = System.currentTimeMillis(),
-            isLoading = false
-        )
-        _cacheState.value = cache.toMap()
+        cache.compute(packageName) { _, existing ->
+            (existing ?: CachedVersions()).copy(
+                apkPureVersions = versions,
+                timestamp = System.currentTimeMillis()
+            )
+        }
         Log.d(TAG, "Cached ${versions.size} APKPure versions for $packageName")
     }
     
     fun setLoadingComplete(packageName: String) {
-        val existing = cache[packageName] ?: return
-        cache[packageName] = existing.copy(isLoading = false)
-        _cacheState.value = cache.toMap()
+        cache.compute(packageName) { _, existing ->
+            existing?.copy(isLoading = false)
+        }
     }
     
     fun clear() {
         cache.clear()
-        _cacheState.value = emptyMap()
     }
 }
 
@@ -128,6 +133,7 @@ class AlternativeDownloadViewModel @Inject constructor(
     private val _totalPages = MutableStateFlow(1)
     val totalPages: StateFlow<Int> = _totalPages.asStateFlow()
     
+    @Volatile
     private var allVersions: List<AppVersion> = emptyList()
     
     /**
@@ -135,33 +141,47 @@ class AlternativeDownloadViewModel @Inject constructor(
      */
     fun preloadVersions(packageName: String) {
         viewModelScope.launch(Dispatchers.IO) {
-            // Check if already cached
+            // Check if already cached or loading - atomic check
             val cached = AlternativeVersionCache.getCached(packageName)
-            if (cached != null && !cached.isLoading && 
+            if (cached != null && 
                 (cached.apkMirrorVersions.isNotEmpty() || cached.apkPureVersions.isNotEmpty())) {
                 Log.d(TAG, "Versions already cached for $packageName")
                 return@launch
             }
             
-            AlternativeVersionCache.setLoading(packageName)
+            // Atomically set loading state, bail if already loading
+            if (!AlternativeVersionCache.setLoadingIfNotAlready(packageName)) {
+                Log.d(TAG, "Already preloading versions for $packageName")
+                return@launch
+            }
+            
             Log.d(TAG, "Preloading versions for $packageName")
             
-            // Load APKMirror versions in background
-            try {
-                val mirrorVersions = apkMirrorProvider.getAppVersions(packageName)
-                AlternativeVersionCache.updateAPKMirrorVersions(packageName, mirrorVersions)
-            } catch (e: Exception) {
-                Log.e(TAG, "APKMirror preload failed for $packageName", e)
+            // Load both in parallel for better performance
+            val mirrorJob = async {
+                try {
+                    apkMirrorProvider.getAppVersions(packageName)
+                } catch (e: Exception) {
+                    Log.e(TAG, "APKMirror preload failed for $packageName", e)
+                    emptyList()
+                }
             }
             
-            // Load APKPure versions in background
-            try {
-                val pureVersions = apkPureProvider.getAppVersions(packageName)
-                AlternativeVersionCache.updateAPKPureVersions(packageName, pureVersions)
-            } catch (e: Exception) {
-                Log.e(TAG, "APKPure preload failed for $packageName", e)
+            val pureJob = async {
+                try {
+                    apkPureProvider.getAppVersions(packageName)
+                } catch (e: Exception) {
+                    Log.e(TAG, "APKPure preload failed for $packageName", e)
+                    emptyList()
+                }
             }
             
+            // Wait for both and update cache
+            val mirrorVersions = mirrorJob.await()
+            val pureVersions = pureJob.await()
+            
+            AlternativeVersionCache.updateAPKMirrorVersions(packageName, mirrorVersions)
+            AlternativeVersionCache.updateAPKPureVersions(packageName, pureVersions)
             AlternativeVersionCache.setLoadingComplete(packageName)
         }
     }
@@ -261,14 +281,17 @@ class AlternativeDownloadViewModel @Inject constructor(
     }
     
     private fun updatePaginatedVersions() {
-        val totalItems = allVersions.size
-        _totalPages.value = (totalItems + ITEMS_PER_PAGE - 1) / ITEMS_PER_PAGE
+        val currentVersions = allVersions // Capture reference for thread safety
+        val totalItems = currentVersions.size
+        
+        // Ensure totalPages is at least 1 to avoid UI issues
+        _totalPages.value = maxOf(1, (totalItems + ITEMS_PER_PAGE - 1) / ITEMS_PER_PAGE)
         
         val startIndex = (_currentPage.value - 1) * ITEMS_PER_PAGE
         val endIndex = minOf(startIndex + ITEMS_PER_PAGE, totalItems)
         
-        _versions.value = if (startIndex < totalItems) {
-            allVersions.subList(startIndex, endIndex)
+        _versions.value = if (startIndex < totalItems && startIndex >= 0) {
+            currentVersions.subList(startIndex, endIndex).toList() // Create a copy
         } else {
             emptyList()
         }
