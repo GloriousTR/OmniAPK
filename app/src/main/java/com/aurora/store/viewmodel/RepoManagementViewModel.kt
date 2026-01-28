@@ -114,7 +114,7 @@ class RepoManagementViewModel @Inject constructor(
             return
         }
         
-        _syncState.value = SyncState.Syncing
+        _syncState.value = SyncState.Syncing()
         
         val syncRequest = OneTimeWorkRequestBuilder<FDroidSyncWorker>()
             .build()
