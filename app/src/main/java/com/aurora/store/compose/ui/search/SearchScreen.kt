@@ -6,7 +6,6 @@
 package com.aurora.store.compose.ui.search
 
 import androidx.annotation.StringRes
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -294,7 +293,7 @@ private fun ScreenContent(
                                 if (hasGoogleResults) {
                                     item(key = "google_header") {
                                         Text(
-                                            text = "Google Play",
+                                            text = stringResource(R.string.title_google_play),
                                             style = MaterialTheme.typography.titleMedium,
                                             fontWeight = FontWeight.Bold,
                                             modifier = Modifier.padding(
@@ -503,11 +502,11 @@ private fun FDroidAppListItem(
             .padding(
                 horizontal = dimensionResource(R.dimen.padding_medium),
                 vertical = 4.dp
-            )
-            .clickable(onClick = onClick),
+            ),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
+        ),
+        onClick = onClick
     ) {
         Row(
             modifier = Modifier

@@ -28,7 +28,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.Code
-import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -38,6 +37,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -122,6 +122,8 @@ fun FDroidAppDetailsScreen(
                 }
             }
             else -> {
+                val currentApp = app ?: return@Scaffold
+                
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -131,58 +133,58 @@ fun FDroidAppDetailsScreen(
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     // App Header
-                    AppHeader(app = app!!)
+                    AppHeader(app = currentApp)
 
                     // Action Buttons
                     ActionButtons(
-                        downloadUrl = app!!.downloadUrl,
-                        webSite = app!!.webSite,
-                        sourceCode = app!!.sourceCode,
+                        downloadUrl = currentApp.downloadUrl,
+                        webSite = currentApp.webSite,
+                        sourceCode = currentApp.sourceCode,
                         onDownload = {
-                            if (app!!.downloadUrl.isNotEmpty()) {
-                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(app!!.downloadUrl))
+                            if (currentApp.downloadUrl.isNotEmpty()) {
+                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(currentApp.downloadUrl))
                                 context.startActivity(intent)
                             }
                         },
                         onOpenWebsite = {
-                            if (app!!.webSite.isNotEmpty()) {
-                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(app!!.webSite))
+                            if (currentApp.webSite.isNotEmpty()) {
+                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(currentApp.webSite))
                                 context.startActivity(intent)
                             }
                         },
                         onOpenSourceCode = {
-                            if (app!!.sourceCode.isNotEmpty()) {
-                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(app!!.sourceCode))
+                            if (currentApp.sourceCode.isNotEmpty()) {
+                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(currentApp.sourceCode))
                                 context.startActivity(intent)
                             }
                         }
                     )
 
                     // Categories
-                    if (app!!.categories.isNotEmpty()) {
-                        CategoriesSection(categories = app!!.categories)
+                    if (currentApp.categories.isNotEmpty()) {
+                        CategoriesSection(categories = currentApp.categories)
                     }
 
                     // Description
-                    if (app!!.description.isNotEmpty()) {
+                    if (currentApp.description.isNotEmpty()) {
                         DescriptionSection(
-                            summary = app!!.summary,
-                            description = app!!.description
+                            summary = currentApp.summary,
+                            description = currentApp.description
                         )
-                    } else if (app!!.summary.isNotEmpty()) {
+                    } else if (currentApp.summary.isNotEmpty()) {
                         DescriptionSection(
-                            summary = app!!.summary,
+                            summary = currentApp.summary,
                             description = ""
                         )
                     }
 
                     // App Info
-                    AppInfoSection(app = app!!)
+                    AppInfoSection(app = currentApp)
 
                     // Repository Info
                     RepositoryInfoSection(
-                        repoName = app!!.repoName,
-                        repoAddress = app!!.repoAddress
+                        repoName = currentApp.repoName,
+                        repoAddress = currentApp.repoAddress
                     )
                 }
             }
@@ -326,8 +328,8 @@ private fun CategoriesSection(categories: List<String>) {
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 categories.forEach { category ->
-                    AssistChip(
-                        onClick = { },
+                    SuggestionChip(
+                        onClick = { /* Category filtering can be added in the future */ },
                         label = { Text(text = category) }
                     )
                 }
