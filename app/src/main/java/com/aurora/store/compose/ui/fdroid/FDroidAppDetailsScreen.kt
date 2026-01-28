@@ -27,7 +27,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Link
-import androidx.compose.material.icons.filled.Code
+import androidx.compose.material.icons.filled.Build
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -292,7 +292,7 @@ private fun ActionButtons(
                 modifier = Modifier.weight(1f)
             ) {
                 Icon(
-                    imageVector = Icons.Default.Code,
+                    imageVector = Icons.Default.Build,
                     contentDescription = null,
                     modifier = Modifier.size(18.dp)
                 )

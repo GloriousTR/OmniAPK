@@ -8,6 +8,7 @@ package com.aurora.store.data.installer
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.IntentSender
 import android.content.pm.PackageInfo
 import android.content.pm.PackageInstaller
 import android.content.pm.PackageManager
@@ -240,7 +241,7 @@ class XAPKInstaller @Inject constructor(
             }
         }
 
-    private fun getCallBackIntent(sessionId: Int): PendingIntent {
+    private fun getCallBackIntent(sessionId: Int): IntentSender {
         val callBackIntent = Intent(context, InstallerStatusReceiver::class.java).apply {
             action = AppInstaller.ACTION_INSTALL_STATUS
             setPackage(context.packageName)
@@ -254,7 +255,7 @@ class XAPKInstaller @Inject constructor(
             callBackIntent,
             PendingIntent.FLAG_UPDATE_CURRENT,
             true
-        )!!
+        )!!.intentSender
     }
 }
 
