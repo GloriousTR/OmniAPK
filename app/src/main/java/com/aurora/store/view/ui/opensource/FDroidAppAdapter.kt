@@ -15,8 +15,10 @@ import android.widget.TextView
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import coil.load
-import coil.transform.RoundedCornersTransformation
+import coil3.load
+import coil3.request.placeholder
+import coil3.request.transformations
+import coil3.transform.RoundedCornersTransformation
 import com.aurora.store.R
 import com.aurora.store.data.providers.FDroidApp
 import com.google.android.material.button.MaterialButton
@@ -47,11 +49,10 @@ class FDroidAppAdapter : ListAdapter<FDroidApp, FDroidAppAdapter.AppViewHolder>(
             versionText.text = app.versionName
             repoText.text = app.repoName
 
-            // Load icon with Coil
+            // Load icon with Coil 3
             if (app.iconUrl.isNotEmpty()) {
                 iconView.load(app.iconUrl) {
                     placeholder(R.drawable.ic_app_placeholder)
-                    error(R.drawable.ic_app_placeholder)
                     transformations(RoundedCornersTransformation(12f))
                 }
             } else {
