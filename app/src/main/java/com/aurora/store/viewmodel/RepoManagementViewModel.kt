@@ -1,6 +1,7 @@
 package com.aurora.store.viewmodel
 
 import android.content.Context
+import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.work.ExistingWorkPolicy
@@ -37,6 +38,25 @@ class RepoManagementViewModel @Inject constructor(
     private val _appCount = MutableStateFlow(0)
     val appCount: StateFlow<Int> = _appCount.asStateFlow()
     
+    private val workInfoLiveData = WorkManager.getInstance(context)
+        .getWorkInfosForUniqueWorkLiveData(FDroidSyncWorker.WORK_NAME)
+    
+    private val workInfoObserver = Observer<List<WorkInfo>> { workInfos ->
+        val workInfo = workInfos?.firstOrNull()
+        val newState = when (workInfo?.state) {
+            WorkInfo.State.RUNNING -> SyncState.Syncing
+            WorkInfo.State.SUCCEEDED -> {
+                loadSyncInfo()
+                SyncState.Success
+            }
+            WorkInfo.State.FAILED -> SyncState.Error("Sync failed")
+            else -> SyncState.Idle
+        }
+        _syncState.value = newState
+        // Also update the global sync status for other screens
+        FDroidSyncStatus.updateState(newState)
+    }
+    
     init {
         loadSyncInfo()
         observeSyncWork()
@@ -44,26 +64,28 @@ class RepoManagementViewModel @Inject constructor(
     
     private fun loadSyncInfo() {
         viewModelScope.launch {
-            _lastSyncTime.value = fdroidAppDao.getLastSyncTime()
-            _appCount.value = fdroidAppDao.getAppCount()
+            try {
+                _lastSyncTime.value = fdroidAppDao.getLastSyncTime()
+                _appCount.value = fdroidAppDao.getAppCount()
+                FDroidSyncStatus.updateAppCount(_appCount.value)
+                _lastSyncTime.value?.let { FDroidSyncStatus.updateLastSyncTime(it) }
+            } catch (e: Exception) {
+                // Log database errors for debugging
+                android.util.Log.e("RepoManagementViewModel", "Failed to load sync info", e)
+                _lastSyncTime.value = null
+                _appCount.value = 0
+            }
         }
     }
     
     private fun observeSyncWork() {
-        WorkManager.getInstance(context)
-            .getWorkInfosForUniqueWorkLiveData(FDroidSyncWorker.WORK_NAME)
-            .observeForever { workInfos ->
-                val workInfo = workInfos?.firstOrNull()
-                when (workInfo?.state) {
-                    WorkInfo.State.RUNNING -> _syncState.value = SyncState.Syncing
-                    WorkInfo.State.SUCCEEDED -> {
-                        _syncState.value = SyncState.Success
-                        loadSyncInfo()
-                    }
-                    WorkInfo.State.FAILED -> _syncState.value = SyncState.Error("Sync failed")
-                    else -> _syncState.value = SyncState.Idle
-                }
-            }
+        workInfoLiveData.observeForever(workInfoObserver)
+    }
+    
+    override fun onCleared() {
+        super.onCleared()
+        // Remove observer to prevent memory leaks
+        workInfoLiveData.removeObserver(workInfoObserver)
     }
     
     fun startSync() {
@@ -110,4 +132,52 @@ sealed class SyncState {
     data object Syncing : SyncState()
     data object Success : SyncState()
     data class Error(val message: String) : SyncState()
+}
+
+/**
+ * Global sync status object that can be observed from any screen
+ * to show sync status in the status bar.
+ * Thread-safe: All updates are synchronized to ensure consistency.
+ */
+object FDroidSyncStatus {
+    private val _syncState = MutableStateFlow<SyncState>(SyncState.Idle)
+    val syncState: StateFlow<SyncState> = _syncState.asStateFlow()
+    
+    private val _lastSyncTime = MutableStateFlow<Long?>(null)
+    val lastSyncTime: StateFlow<Long?> = _lastSyncTime.asStateFlow()
+    
+    private val _appCount = MutableStateFlow(0)
+    val appCount: StateFlow<Int> = _appCount.asStateFlow()
+    
+    private val lock = Any()
+    
+    fun updateState(state: SyncState) {
+        synchronized(lock) {
+            _syncState.value = state
+        }
+    }
+    
+    fun updateLastSyncTime(time: Long) {
+        synchronized(lock) {
+            _lastSyncTime.value = time
+        }
+    }
+    
+    fun updateAppCount(count: Int) {
+        synchronized(lock) {
+            _appCount.value = count
+        }
+    }
+    
+    /**
+     * Atomically update all sync status fields at once.
+     * Use this when updating multiple fields together to ensure consistency.
+     */
+    fun updateSyncResult(state: SyncState, appCount: Int, lastSyncTime: Long) {
+        synchronized(lock) {
+            _appCount.value = appCount
+            _lastSyncTime.value = lastSyncTime
+            _syncState.value = state
+        }
+    }
 }

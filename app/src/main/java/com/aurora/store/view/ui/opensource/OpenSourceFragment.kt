@@ -17,20 +17,27 @@ import androidx.core.view.updateLayoutParams
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.aurora.extensions.navigate
 import com.aurora.store.MobileNavigationDirections
 import com.aurora.store.R
 import com.aurora.store.compose.navigation.Screen
-import com.aurora.store.databinding.FragmentAppsGamesBinding
+import com.aurora.store.databinding.FragmentOpenSourceBinding
 import com.aurora.store.view.ui.commons.BaseFragment
+import com.aurora.store.viewmodel.FDroidSyncStatus
+import com.aurora.store.viewmodel.SyncState
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
+import java.util.Date
 
 @AndroidEntryPoint
-class OpenSourceFragment : BaseFragment<FragmentAppsGamesBinding>() {
+class OpenSourceFragment : BaseFragment<FragmentOpenSourceBinding>() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -88,6 +95,64 @@ class OpenSourceFragment : BaseFragment<FragmentAppsGamesBinding>() {
         binding.searchFab.setOnClickListener {
             requireContext().navigate(Screen.Search)
         }
+
+        // Setup sync status bar dismiss button
+        binding.syncDismissBtn.setOnClickListener {
+            binding.syncStatusBar.visibility = View.GONE
+        }
+
+        // Observe sync status
+        observeSyncStatus()
+    }
+
+    private fun observeSyncStatus() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    FDroidSyncStatus.syncState.collectLatest { state ->
+                        updateSyncStatusBar(state)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun updateSyncStatusBar(state: SyncState) {
+        when (state) {
+            is SyncState.Syncing -> {
+                binding.syncStatusBar.visibility = View.VISIBLE
+                binding.syncProgress.visibility = View.VISIBLE
+                binding.syncIcon.visibility = View.GONE
+                binding.syncDismissBtn.visibility = View.GONE
+                binding.syncStatusText.text = getString(R.string.fdroid_syncing_status)
+            }
+            is SyncState.Success -> {
+                binding.syncStatusBar.visibility = View.VISIBLE
+                binding.syncProgress.visibility = View.GONE
+                binding.syncIcon.visibility = View.VISIBLE
+                binding.syncIcon.setImageResource(R.drawable.ic_check)
+                binding.syncDismissBtn.visibility = View.VISIBLE
+                val appCount = FDroidSyncStatus.appCount.value
+                val lastSync = FDroidSyncStatus.lastSyncTime.value?.let { formatTime(it) } ?: ""
+                binding.syncStatusText.text = getString(R.string.fdroid_sync_success_status, appCount, lastSync)
+            }
+            is SyncState.Error -> {
+                binding.syncStatusBar.visibility = View.VISIBLE
+                binding.syncProgress.visibility = View.GONE
+                binding.syncIcon.visibility = View.VISIBLE
+                binding.syncIcon.setImageResource(R.drawable.ic_cancel)
+                binding.syncDismissBtn.visibility = View.VISIBLE
+                binding.syncStatusText.text = getString(R.string.fdroid_sync_error_status, state.message)
+            }
+            is SyncState.Idle -> {
+                // Hide status bar when idle
+                binding.syncStatusBar.visibility = View.GONE
+            }
+        }
+    }
+
+    private fun formatTime(timestamp: Long): String {
+        return android.text.format.DateFormat.getTimeFormat(requireContext()).format(Date(timestamp))
     }
 
     override fun onDestroyView() {

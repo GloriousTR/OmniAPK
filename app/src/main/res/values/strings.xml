@@ -31,6 +31,9 @@
   <string name="fdroid_no_apps_synced">No apps synced yet.\nGo to Settings → F-Droid Repositories\nand tap Sync to download apps.</string>
   <string name="fdroid_sync_title">F-Droid Sync</string>
   <string name="fdroid_sync_complete">Synced %d apps from F-Droid repositories</string>
+  <string name="fdroid_syncing_status">Syncing F-Droid repositories…</string>
+  <string name="fdroid_sync_success_status">Synced %1$d apps • Last sync: %2$s</string>
+  <string name="fdroid_sync_error_status">Sync failed: %1$s</string>
   <string name="fdroid_onboarding_title">Setup F-Droid</string>
   <string name="fdroid_onboarding_message">Would you like to configure F-Droid repositories now? You can browse thousands of open-source apps.</string>
   <string name="fdroid_onboarding_setup">Setup Now</string>
