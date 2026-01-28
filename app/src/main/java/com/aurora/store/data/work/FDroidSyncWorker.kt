@@ -15,6 +15,7 @@ import androidx.work.CoroutineWorker
 import androidx.work.ForegroundInfo
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
+import com.aurora.Constants
 import com.aurora.store.R
 import com.aurora.store.data.model.FDroidRepo
 import com.aurora.store.data.providers.FDroidProvider
@@ -190,10 +191,10 @@ class FDroidSyncWorker @AssistedInject constructor(
     }
     
     private fun createForegroundInfo(message: String): ForegroundInfo {
-        val notification = NotificationCompat.Builder(context, NotificationUtil.CHANNEL_UPDATES)
+        val notification = NotificationCompat.Builder(context, Constants.NOTIFICATION_CHANNEL_UPDATES)
             .setContentTitle("F-Droid Sync")
             .setContentText(message)
-            .setSmallIcon(R.drawable.ic_notification)
+            .setSmallIcon(R.drawable.ic_notification_outlined)
             .setOngoing(true)
             .setProgress(0, 0, true)
             .build()
@@ -201,10 +202,10 @@ class FDroidSyncWorker @AssistedInject constructor(
     }
     
     private fun notifyComplete(appCount: Int) {
-        val notification = NotificationCompat.Builder(context, NotificationUtil.CHANNEL_UPDATES)
+        val notification = NotificationCompat.Builder(context, Constants.NOTIFICATION_CHANNEL_UPDATES)
             .setContentTitle("F-Droid Sync Complete")
             .setContentText("Synced $appCount apps from F-Droid repositories")
-            .setSmallIcon(R.drawable.ic_notification)
+            .setSmallIcon(R.drawable.ic_notification_outlined)
             .setAutoCancel(true)
             .build()
         context.getSystemService<NotificationManager>()?.notify(notificationId, notification)

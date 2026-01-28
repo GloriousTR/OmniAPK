@@ -7,7 +7,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -177,7 +176,7 @@ fun SyncCard(
                         )
                     } else {
                         Icon(
-                            Icons.Default.Sync,
+                            Icons.Default.Refresh,
                             contentDescription = null,
                             modifier = Modifier.size(20.dp)
                         )

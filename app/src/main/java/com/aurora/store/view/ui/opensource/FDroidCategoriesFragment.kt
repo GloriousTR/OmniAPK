@@ -30,9 +30,7 @@ class FDroidCategoriesFragment : Fragment() {
     private lateinit var progressView: View
     private lateinit var emptyView: View
     private lateinit var emptyText: TextView
-    private val adapter = FDroidCategoryAdapter { category ->
-        // Navigate to category apps (can be implemented later)
-    }
+    private val adapter = FDroidCategoryAdapter()
 
     override fun onCreateView(
         inflater: LayoutInflater,
