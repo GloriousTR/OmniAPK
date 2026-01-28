@@ -87,49 +87,123 @@ class APKMirrorProvider @Inject constructor(
 
             val doc = Jsoup.connect(url)
                 .userAgent(userAgent)
-                .timeout(10000)
+                .timeout(15000)
+                .followRedirects(true)
                 .get()
 
             val versions = mutableListOf<AppVersion>()
-            // Selector for version list might vary, trying strict structure
-            val listWidget = doc.select(".listWidget").firstOrNull() 
-            val rows = listWidget?.select(".table-row") ?: doc.select(".table-row")
+            
+            // Try multiple selectors for version list - APKMirror changes structure frequently
+            val rows = doc.select("div.listWidget div.appRow").ifEmpty { 
+                doc.select(".table-row").ifEmpty {
+                    doc.select("div.appRowVariantTag").ifEmpty {
+                        doc.select("div[class*=appRow]")
+                    }
+                }
+            }
 
             rows.take(20).forEach { row ->
+                // Try multiple link selectors
                 val link = row.select("a.fontBlack").first()
-                val dateInfo = row.select(".dateyear_role").text()
+                    ?: row.select("a[class*=fontBlack]").first()
+                    ?: row.select("h5.appRowTitle a").first()
+                    ?: row.select("a[href*=download]").first()
+                    
+                val dateInfo = row.select(".dateyear_utc").text().ifEmpty { 
+                    row.select(".dateyear_role").text().ifEmpty {
+                        row.select("[class*=date]").text()
+                    }
+                }
                 
                 if (link != null) {
                     val versionName = link.text().replace("Download", "").trim()
                     val href = link.attr("href")
                     
-                    versions.add(
-                        AppVersion(
-                            packageName = packageName, // Keep the slug
-                            versionName = versionName,
-                            versionCode = 0,
-                            downloadPageUrl = "$baseUrl$href",
-                            source = "APKMirror",
-                            uploadDate = dateInfo
+                    if (versionName.isNotEmpty() && href.isNotEmpty()) {
+                        versions.add(
+                            AppVersion(
+                                packageName = packageName, // Keep the slug
+                                versionName = versionName,
+                                versionCode = 0,
+                                downloadPageUrl = if (href.startsWith("http")) href else "$baseUrl$href",
+                                source = "APKMirror",
+                                uploadDate = dateInfo
+                            )
                         )
-                    )
+                    }
                 }
             }
+            
+            Log.d("APKMirror", "Found ${versions.size} versions for $packageName")
             versions
         } catch (e: Exception) {
-            Log.e("APKMirror", "Get versions failed: ${e.message}")
+            Log.e("APKMirror", "Get versions failed: ${e.message}", e)
             emptyList()
         }
     }
     
     private suspend fun searchVersionsByPackageName(packageName: String): List<AppVersion> {
-        // Fallback: search for package name to find the app page
-        val searchResults = searchApps(packageName)
-        if (searchResults.isNotEmpty()) {
-            val bestMatch = searchResults.first()
-            val slug = bestMatch.downloadUrl.substringAfter("/apk/").trim('/').replace("/", ".")
-            // Recursive call with slug
-            return getAppVersions(slug) 
+        try {
+            // Fallback: search for package name to find the app page
+            val searchResults = searchApps(packageName)
+            if (searchResults.isNotEmpty()) {
+                val bestMatch = searchResults.first()
+                val slug = bestMatch.downloadUrl.substringAfter("/apk/").trimEnd('/').split("/").take(2).joinToString("/")
+                // Try to get versions page directly
+                val versionsUrl = "$baseUrl/apk/$slug/versions/"
+                
+                try {
+                    val doc = Jsoup.connect(versionsUrl)
+                        .userAgent(userAgent)
+                        .timeout(15000)
+                        .followRedirects(true)
+                        .get()
+                        
+                    val versions = mutableListOf<AppVersion>()
+                    val rows = doc.select("div.listWidget div.appRow").ifEmpty { 
+                        doc.select(".table-row").ifEmpty {
+                            doc.select("div[class*=appRow]")
+                        }
+                    }
+                    
+                    rows.take(20).forEach { row ->
+                        val link = row.select("a.fontBlack").first()
+                            ?: row.select("a[class*=fontBlack]").first()
+                            ?: row.select("h5.appRowTitle a").first()
+                            
+                        val dateInfo = row.select(".dateyear_utc").text().ifEmpty { 
+                            row.select(".dateyear_role").text()
+                        }
+                        
+                        if (link != null) {
+                            val versionName = link.text().replace("Download", "").trim()
+                            val href = link.attr("href")
+                            
+                            if (versionName.isNotEmpty() && href.isNotEmpty()) {
+                                versions.add(
+                                    AppVersion(
+                                        packageName = packageName,
+                                        versionName = versionName,
+                                        versionCode = 0,
+                                        downloadPageUrl = if (href.startsWith("http")) href else "$baseUrl$href",
+                                        source = "APKMirror",
+                                        uploadDate = dateInfo
+                                    )
+                                )
+                            }
+                        }
+                    }
+                    
+                    if (versions.isNotEmpty()) {
+                        Log.d("APKMirror", "Found ${versions.size} versions via search for $packageName")
+                        return versions
+                    }
+                } catch (e: Exception) {
+                    Log.e("APKMirror", "Versions page failed for $packageName: ${e.message}")
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("APKMirror", "Search versions failed for $packageName: ${e.message}")
         }
         return emptyList()
     }

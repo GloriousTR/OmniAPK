@@ -81,44 +81,83 @@ class APKPureProvider @Inject constructor(
             // Strategy: Search for the package to get the correct slug URL
             // because APKPure uses /nice-app-name/com.package.name format
             val searchResults = searchApps(packageName)
-            if (searchResults.isEmpty()) return@withContext emptyList()
+            if (searchResults.isEmpty()) {
+                Log.d("APKPure", "No search results for $packageName")
+                return@withContext emptyList()
+            }
             
             val appUrl = searchResults.first().downloadUrl // e.g., https://apkpure.com/instagram/com.instagram.android
             val versionsUrl = "$appUrl/versions"
             
+            Log.d("APKPure", "Fetching versions from: $versionsUrl")
+            
             val doc = Jsoup.connect(versionsUrl)
                 .userAgent(userAgent)
-                .timeout(10000)
+                .timeout(15000)
+                .followRedirects(true)
                 .get()
 
             val versions = mutableListOf<AppVersion>()
-            // Versions list
-            val listItems = doc.select("ul.ver-wrap li, .ver-item")
+            
+            // Try multiple selectors for versions list - APKPure structure varies
+            val listItems = doc.select("ul.ver-wrap li").ifEmpty {
+                doc.select(".ver-item").ifEmpty {
+                    doc.select("div.ver").ifEmpty {
+                        doc.select("a[href*=download]").ifEmpty {
+                            // Try finding version rows by common patterns
+                            doc.select("div[class*=version], li[class*=version]")
+                        }
+                    }
+                }
+            }
+            
+            Log.d("APKPure", "Found ${listItems.size} version items")
 
             listItems.take(20).forEach { item ->
-                val link = item.select("a").first()
-                val verName = item.select(".ver-item-n").text()
-                val verInfo = item.select(".ver-item-s").text() // size info
+                val link = item.select("a[href]").first()
+                
+                // Try multiple version name selectors
+                val verName = item.select(".ver-item-n").text().ifEmpty {
+                    item.select(".ver-info-top").text().ifEmpty {
+                        item.select("span[class*=ver]").text().ifEmpty {
+                            link?.text() ?: ""
+                        }
+                    }
+                }
+                
+                // Try multiple size selectors
+                val verInfo = item.select(".ver-item-s").text().ifEmpty {
+                    item.select(".ver-info-m").text().ifEmpty {
+                        item.select("span[class*=size]").text()
+                    }
+                }
                 
                 if (link != null) {
                     val href = link.attr("href")
-                    val finalVersionName = if (verName.isNotEmpty()) verName.replace("Download", "").trim() else "Unknown"
+                    val finalVersionName = verName.replace("Download", "").trim().ifEmpty { 
+                        // Try to extract version from href
+                        href.split("/").lastOrNull { it.matches(Regex(".*\\d.*")) } ?: "Unknown"
+                    }
                     
-                    versions.add(
-                        AppVersion(
-                            packageName = packageName,
-                            versionName = finalVersionName,
-                            versionCode = 0,
-                            downloadPageUrl = "$baseUrl$href",
-                            source = "APKPure",
-                            size = verInfo
+                    if (href.isNotEmpty() && finalVersionName != "Unknown") {
+                        versions.add(
+                            AppVersion(
+                                packageName = packageName,
+                                versionName = finalVersionName,
+                                versionCode = 0,
+                                downloadPageUrl = if (href.startsWith("http")) href else "$baseUrl$href",
+                                source = "APKPure",
+                                size = verInfo
+                            )
                         )
-                    )
+                    }
                 }
             }
+            
+            Log.d("APKPure", "Parsed ${versions.size} versions for $packageName")
             versions
         } catch (e: Exception) {
-            Log.e("APKPure", "Get versions failed: ${e.message}")
+            Log.e("APKPure", "Get versions failed: ${e.message}", e)
             emptyList()
         }
     }

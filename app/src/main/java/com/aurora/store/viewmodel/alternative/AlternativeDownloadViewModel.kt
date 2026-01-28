@@ -15,6 +15,7 @@ import com.aurora.store.data.providers.AppVersion
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -24,7 +25,82 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
 import java.io.FileOutputStream
+import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
+
+/**
+ * Global cache for alternative download versions.
+ * This cache is shared across all AlternativeDownloadViewModel instances.
+ */
+object AlternativeVersionCache {
+    private const val TAG = "AltVersionCache"
+    private const val CACHE_DURATION_MS = 30 * 60 * 1000L // 30 minutes
+    
+    data class CachedVersions(
+        val apkMirrorVersions: List<AppVersion> = emptyList(),
+        val apkPureVersions: List<AppVersion> = emptyList(),
+        val timestamp: Long = System.currentTimeMillis(),
+        val isLoading: Boolean = false
+    )
+    
+    private val cache = ConcurrentHashMap<String, CachedVersions>()
+    
+    fun getCached(packageName: String): CachedVersions? {
+        val cached = cache[packageName] ?: return null
+        // Check if cache is still valid
+        if (System.currentTimeMillis() - cached.timestamp > CACHE_DURATION_MS) {
+            cache.remove(packageName)
+            return null
+        }
+        return cached
+    }
+    
+    /**
+     * Atomically set loading state, returns true if this call initiated loading
+     */
+    fun setLoadingIfNotAlready(packageName: String): Boolean {
+        var initiatedLoading = false
+        cache.compute(packageName) { _, existing ->
+            if (existing?.isLoading == true) {
+                existing // Already loading, don't change
+            } else {
+                initiatedLoading = true
+                (existing ?: CachedVersions()).copy(isLoading = true)
+            }
+        }
+        return initiatedLoading
+    }
+    
+    fun updateAPKMirrorVersions(packageName: String, versions: List<AppVersion>) {
+        cache.compute(packageName) { _, existing ->
+            (existing ?: CachedVersions()).copy(
+                apkMirrorVersions = versions,
+                timestamp = System.currentTimeMillis()
+            )
+        }
+        Log.d(TAG, "Cached ${versions.size} APKMirror versions for $packageName")
+    }
+    
+    fun updateAPKPureVersions(packageName: String, versions: List<AppVersion>) {
+        cache.compute(packageName) { _, existing ->
+            (existing ?: CachedVersions()).copy(
+                apkPureVersions = versions,
+                timestamp = System.currentTimeMillis()
+            )
+        }
+        Log.d(TAG, "Cached ${versions.size} APKPure versions for $packageName")
+    }
+    
+    fun setLoadingComplete(packageName: String) {
+        cache.compute(packageName) { _, existing ->
+            existing?.copy(isLoading = false)
+        }
+    }
+    
+    fun clear() {
+        cache.clear()
+    }
+}
 
 @HiltViewModel
 class AlternativeDownloadViewModel @Inject constructor(
@@ -35,6 +111,7 @@ class AlternativeDownloadViewModel @Inject constructor(
 
     companion object {
         private const val TAG = "AltDownloadVM"
+        private const val ITEMS_PER_PAGE = 10
     }
 
     private val client = OkHttpClient.Builder()
@@ -49,16 +126,96 @@ class AlternativeDownloadViewModel @Inject constructor(
 
     private val _downloadProgress = MutableStateFlow(0)
     val downloadProgress: StateFlow<Int> = _downloadProgress.asStateFlow()
+    
+    private val _currentPage = MutableStateFlow(1)
+    val currentPage: StateFlow<Int> = _currentPage.asStateFlow()
+    
+    private val _totalPages = MutableStateFlow(1)
+    val totalPages: StateFlow<Int> = _totalPages.asStateFlow()
+    
+    @Volatile
+    private var allVersions: List<AppVersion> = emptyList()
+    
+    /**
+     * Arka planda APKMirror ve APKPure versiyonlarını önceden yükle ve cache'e al
+     */
+    fun preloadVersions(packageName: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            // Check if already cached or loading - atomic check
+            val cached = AlternativeVersionCache.getCached(packageName)
+            if (cached != null && 
+                (cached.apkMirrorVersions.isNotEmpty() || cached.apkPureVersions.isNotEmpty())) {
+                Log.d(TAG, "Versions already cached for $packageName")
+                return@launch
+            }
+            
+            // Atomically set loading state, bail if already loading
+            if (!AlternativeVersionCache.setLoadingIfNotAlready(packageName)) {
+                Log.d(TAG, "Already preloading versions for $packageName")
+                return@launch
+            }
+            
+            Log.d(TAG, "Preloading versions for $packageName")
+            
+            // Load both in parallel for better performance
+            val mirrorJob = async {
+                try {
+                    apkMirrorProvider.getAppVersions(packageName)
+                } catch (e: Exception) {
+                    Log.e(TAG, "APKMirror preload failed for $packageName", e)
+                    emptyList()
+                }
+            }
+            
+            val pureJob = async {
+                try {
+                    apkPureProvider.getAppVersions(packageName)
+                } catch (e: Exception) {
+                    Log.e(TAG, "APKPure preload failed for $packageName", e)
+                    emptyList()
+                }
+            }
+            
+            // Wait for both and update cache
+            val mirrorVersions = mirrorJob.await()
+            val pureVersions = pureJob.await()
+            
+            AlternativeVersionCache.updateAPKMirrorVersions(packageName, mirrorVersions)
+            AlternativeVersionCache.updateAPKPureVersions(packageName, pureVersions)
+            AlternativeVersionCache.setLoadingComplete(packageName)
+        }
+    }
 
     /**
-     * APKMirror'dan uygulama versiyonlarını yükle
+     * APKMirror'dan uygulama versiyonlarını yükle (cache destekli)
      */
     fun loadAPKMirrorVersions(packageName: String) {
         viewModelScope.launch {
             _state.value = AlternativeDownloadState.Loading
+            _currentPage.value = 1
+            
             try {
-                val versionList = apkMirrorProvider.getAppVersions(packageName)
-                _versions.value = versionList
+                // Check cache first
+                val cached = AlternativeVersionCache.getCached(packageName)
+                if (cached != null && cached.apkMirrorVersions.isNotEmpty()) {
+                    Log.d(TAG, "Using cached APKMirror versions for $packageName")
+                    allVersions = cached.apkMirrorVersions
+                    updatePaginatedVersions()
+                    _state.value = AlternativeDownloadState.VersionsLoaded("APKMirror")
+                    return@launch
+                }
+                
+                // Fetch from provider
+                val versionList = withContext(Dispatchers.IO) {
+                    apkMirrorProvider.getAppVersions(packageName)
+                }
+                
+                // Update cache
+                AlternativeVersionCache.updateAPKMirrorVersions(packageName, versionList)
+                
+                allVersions = versionList
+                updatePaginatedVersions()
+                
                 _state.value = if (versionList.isEmpty()) {
                     AlternativeDownloadState.Error("Versiyon bulunamadı")
                 } else {
@@ -72,14 +229,35 @@ class AlternativeDownloadViewModel @Inject constructor(
     }
 
     /**
-     * APKPure'dan uygulama versiyonlarını yükle
+     * APKPure'dan uygulama versiyonlarını yükle (cache destekli)
      */
     fun loadAPKPureVersions(packageName: String) {
         viewModelScope.launch {
             _state.value = AlternativeDownloadState.Loading
+            _currentPage.value = 1
+            
             try {
-                val versionList = apkPureProvider.getAppVersions(packageName)
-                _versions.value = versionList
+                // Check cache first
+                val cached = AlternativeVersionCache.getCached(packageName)
+                if (cached != null && cached.apkPureVersions.isNotEmpty()) {
+                    Log.d(TAG, "Using cached APKPure versions for $packageName")
+                    allVersions = cached.apkPureVersions
+                    updatePaginatedVersions()
+                    _state.value = AlternativeDownloadState.VersionsLoaded("APKPure")
+                    return@launch
+                }
+                
+                // Fetch from provider
+                val versionList = withContext(Dispatchers.IO) {
+                    apkPureProvider.getAppVersions(packageName)
+                }
+                
+                // Update cache
+                AlternativeVersionCache.updateAPKPureVersions(packageName, versionList)
+                
+                allVersions = versionList
+                updatePaginatedVersions()
+                
                 _state.value = if (versionList.isEmpty()) {
                     AlternativeDownloadState.Error("Versiyon bulunamadı")
                 } else {
@@ -89,6 +267,33 @@ class AlternativeDownloadViewModel @Inject constructor(
                 Log.e(TAG, "APKPure yükleme hatası", e)
                 _state.value = AlternativeDownloadState.Error(e.message ?: "Bilinmeyen hata")
             }
+        }
+    }
+    
+    /**
+     * Sayfa değiştir
+     */
+    fun goToPage(page: Int) {
+        if (page in 1.._totalPages.value) {
+            _currentPage.value = page
+            updatePaginatedVersions()
+        }
+    }
+    
+    private fun updatePaginatedVersions() {
+        val currentVersions = allVersions // Capture reference for thread safety
+        val totalItems = currentVersions.size
+        
+        // Ensure totalPages is at least 1 to avoid UI issues
+        _totalPages.value = maxOf(1, (totalItems + ITEMS_PER_PAGE - 1) / ITEMS_PER_PAGE)
+        
+        val startIndex = (_currentPage.value - 1) * ITEMS_PER_PAGE
+        val endIndex = minOf(startIndex + ITEMS_PER_PAGE, totalItems)
+        
+        _versions.value = if (startIndex < totalItems && startIndex >= 0) {
+            currentVersions.subList(startIndex, endIndex).toList() // Create a copy
+        } else {
+            emptyList()
         }
     }
 
@@ -102,8 +307,12 @@ class AlternativeDownloadViewModel @Inject constructor(
 
             try {
                 val downloadUrl = when (version.source) {
-                    "APKMirror" -> apkMirrorProvider.getDownloadUrl(version.downloadPageUrl)
-                    "APKPure" -> apkPureProvider.getDownloadUrlFromPage(version.downloadPageUrl)
+                    "APKMirror" -> withContext(Dispatchers.IO) {
+                        apkMirrorProvider.getDownloadUrl(version.downloadPageUrl)
+                    }
+                    "APKPure" -> withContext(Dispatchers.IO) {
+                        apkPureProvider.getDownloadUrlFromPage(version.downloadPageUrl)
+                    }
                     else -> null
                 }
 
@@ -190,6 +399,9 @@ class AlternativeDownloadViewModel @Inject constructor(
         _state.value = AlternativeDownloadState.Idle
         _versions.value = emptyList()
         _downloadProgress.value = 0
+        _currentPage.value = 1
+        _totalPages.value = 1
+        allVersions = emptyList()
     }
 }
 
