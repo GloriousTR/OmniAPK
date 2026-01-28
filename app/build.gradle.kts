@@ -123,17 +123,6 @@ android {
             isDefault = true
             dimension = "device"
         }
-
-        create("huawei") {
-            dimension = "device"
-            versionNameSuffix = "-hw"
-        }
-
-        // This flavor is only for preloaded devices / users who push the app to system
-        create("preload") {
-            dimension = "device"
-            versionNameSuffix = "-preload"
-        }
     }
 
     buildFeatures {
@@ -154,15 +143,6 @@ android {
     dependenciesInfo {
         includeInApk = false
         includeInBundle = false
-    }
-}
-
-androidComponents {
-    beforeVariants(selector().all()) { variant ->
-        val flavour = variant.flavorName
-        if ((flavour == "huawei" || flavour == "preload") && variant.buildType == "nightly") {
-            variant.enable = false
-        }
     }
 }
 
