@@ -114,7 +114,7 @@ class FDroidSyncWorker @AssistedInject constructor(
         }
     }
     
-    private fun fetchAppsFromRepo(repo: FDroidRepo, syncTime: Long): List<FDroidAppEntity> {
+    private suspend fun fetchAppsFromRepo(repo: FDroidRepo, syncTime: Long): List<FDroidAppEntity> {
         val indexUrl = "${repo.address}/index-v1.json"
         Log.d(TAG, "Fetching: $indexUrl")
         
@@ -133,7 +133,7 @@ class FDroidSyncWorker @AssistedInject constructor(
         return parseIndex(json, repo, syncTime)
     }
     
-    private fun parseIndex(json: String, repo: FDroidRepo, syncTime: Long): List<FDroidAppEntity> {
+    private suspend fun parseIndex(json: String, repo: FDroidRepo, syncTime: Long): List<FDroidAppEntity> {
         val apps = mutableListOf<FDroidAppEntity>()
         try {
             val root = JSONObject(json)
