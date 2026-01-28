@@ -19,23 +19,30 @@ import coil3.load
 import coil3.request.placeholder
 import coil3.request.transformations
 import coil3.transform.RoundedCornersTransformation
+import com.aurora.extensions.navigate
 import com.aurora.store.R
+import com.aurora.store.compose.navigation.Screen
 import com.aurora.store.data.providers.FDroidApp
 import com.google.android.material.button.MaterialButton
 
-class FDroidAppAdapter : ListAdapter<FDroidApp, FDroidAppAdapter.AppViewHolder>(AppDiffCallback()) {
+class FDroidAppAdapter(
+    private val onItemClick: ((FDroidApp) -> Unit)? = null
+) : ListAdapter<FDroidApp, FDroidAppAdapter.AppViewHolder>(AppDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AppViewHolder {
         val view = LayoutInflater.from(parent.context)
             .inflate(R.layout.item_fdroid_app, parent, false)
-        return AppViewHolder(view)
+        return AppViewHolder(view, onItemClick)
     }
 
     override fun onBindViewHolder(holder: AppViewHolder, position: Int) {
         holder.bind(getItem(position))
     }
 
-    class AppViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+    class AppViewHolder(
+        itemView: View,
+        private val onItemClick: ((FDroidApp) -> Unit)?
+    ) : RecyclerView.ViewHolder(itemView) {
         private val iconView: ImageView = itemView.findViewById(R.id.app_icon)
         private val nameText: TextView = itemView.findViewById(R.id.app_name)
         private val summaryText: TextView = itemView.findViewById(R.id.app_summary)
@@ -67,12 +74,13 @@ class FDroidAppAdapter : ListAdapter<FDroidApp, FDroidAppAdapter.AppViewHolder>(
                 }
             }
 
-            // Item click - open source code or website
+            // Item click - navigate to F-Droid app details screen
             itemView.setOnClickListener {
-                val url = app.sourceCode.ifEmpty { app.webSite }
-                if (url.isNotEmpty()) {
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-                    itemView.context.startActivity(intent)
+                if (onItemClick != null) {
+                    onItemClick.invoke(app)
+                } else {
+                    // Fallback: Navigate to F-Droid app details screen
+                    itemView.context.navigate(Screen.FDroidAppDetails(app.packageName))
                 }
             }
         }

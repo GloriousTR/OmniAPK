@@ -134,8 +134,13 @@ fun SyncCard(
                             )
                         }
                         is SyncState.Syncing -> {
+                            val syncingText = if (syncState.currentRepo.isNotEmpty()) {
+                                "Syncing ${syncState.currentRepo} (${syncState.currentRepoIndex}/${syncState.totalRepos})..."
+                            } else {
+                                "Syncing..."
+                            }
                             Text(
-                                text = "Syncing...",
+                                text = syncingText,
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.primary
                             )

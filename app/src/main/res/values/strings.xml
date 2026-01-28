@@ -28,16 +28,38 @@
   <string name="download_via_apkpure">Download via APKPure</string>
   <string name="downloading_from">Downloading from %s…</string>
   <string name="action_get">Get</string>
+  <string name="alternative_loading_versions">Loading versions…</string>
+  <string name="alternative_no_versions">No versions found</string>
+  <string name="alternative_select_version">Select a version to download:</string>
+  <string name="alternative_downloading">Downloading…</string>
+  <string name="alternative_download_complete">Download complete! Installing…</string>
+  <string name="alternative_installing">Installing…</string>
+  <string name="alternative_install_success">Installation started</string>
+  <string name="alternative_install_error">Installation failed: %s</string>
   <string name="fdroid_no_apps_synced">No apps synced yet.\nGo to Settings → F-Droid Repositories\nand tap Sync to download apps.</string>
   <string name="fdroid_sync_title">F-Droid Sync</string>
   <string name="fdroid_sync_complete">Synced %d apps from F-Droid repositories</string>
   <string name="fdroid_syncing_status">Syncing F-Droid repositories…</string>
+  <string name="fdroid_syncing_repo_status">Syncing %1$s (%2$d/%3$d)…</string>
   <string name="fdroid_sync_success_status">Synced %1$d apps • Last sync: %2$s</string>
   <string name="fdroid_sync_error_status">Sync failed: %1$s</string>
   <string name="fdroid_onboarding_title">Setup F-Droid</string>
   <string name="fdroid_onboarding_message">Would you like to configure F-Droid repositories now? You can browse thousands of open-source apps.</string>
   <string name="fdroid_onboarding_setup">Setup Now</string>
   <string name="fdroid_onboarding_later">Later</string>
+  <string name="fdroid_license">License</string>
+  <string name="fdroid_last_updated">Last Updated</string>
+  <string name="fdroid_added">Added</string>
+  <string name="fdroid_repository">Repository</string>
+  <string name="details_website">Website</string>
+  <string name="details_source_code">Source</string>
+  <string name="details_version">Version</string>
+  <string name="details_versionCode">Version Code</string>
+  <string name="details_size">Size</string>
+  <string name="details_min_sdk">Min SDK</string>
+  <string name="details_app_info">App Info</string>
+  <string name="category">Categories</string>
+  <string name="title_google_play">Google Play</string>
   <string name="download_speed_bytes" translatable="false">%1$d B/s</string>
   <string name="download_speed_kb" translatable="false">%1$s KB/s</string>
   <string name="download_speed_mb" translatable="false">%1$s MB/s</string>

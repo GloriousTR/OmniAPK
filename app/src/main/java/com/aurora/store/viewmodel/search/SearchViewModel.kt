@@ -23,11 +23,14 @@ import com.aurora.gplayapi.helpers.web.WebSearchHelper
 import com.aurora.store.data.model.SearchFilter
 import com.aurora.store.data.paging.GenericPagingSource.Companion.manualPager
 import com.aurora.store.data.providers.AuthProvider
+import com.aurora.store.data.providers.FDroidApp
+import com.aurora.store.data.room.fdroid.FDroidAppDao
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -40,7 +43,8 @@ import kotlinx.coroutines.launch
 class SearchViewModel @Inject constructor(
     val authProvider: AuthProvider,
     private val searchHelper: SearchHelper,
-    private val webSearchHelper: WebSearchHelper
+    private val webSearchHelper: WebSearchHelper,
+    private val fdroidAppDao: FDroidAppDao
 ) : ViewModel() {
 
     private val contract: SearchContract
@@ -64,11 +68,25 @@ class SearchViewModel @Inject constructor(
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), PagingData.empty())
 
+    // F-Droid search results
+    private val _fdroidApps = MutableStateFlow<List<FDroidApp>>(emptyList())
+    val fdroidApps: StateFlow<List<FDroidApp>> = _fdroidApps.asStateFlow()
+
+    private val _isSearchingFdroid = MutableStateFlow(false)
+    val isSearchingFdroid: StateFlow<Boolean> = _isSearchingFdroid.asStateFlow()
+
     fun filterResults(filter: SearchFilter) {
         searchFilter.value = filter
     }
 
     fun search(query: String) {
+        // Search Google Play
+        searchGooglePlay(query)
+        // Search F-Droid
+        searchFDroid(query)
+    }
+
+    private fun searchGooglePlay(query: String) {
         var nextBundleUrl: String? = null
         val nextStreamUrls = mutableSetOf<String>()
 
@@ -117,11 +135,52 @@ class SearchViewModel @Inject constructor(
             .launchIn(viewModelScope)
     }
 
+    private fun searchFDroid(query: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            _isSearchingFdroid.value = true
+            try {
+                val results = fdroidAppDao.searchApps(query)
+                _fdroidApps.value = results.map { entity ->
+                    FDroidApp(
+                        packageName = entity.packageName,
+                        name = entity.name,
+                        summary = entity.summary,
+                        description = entity.description,
+                        versionName = entity.versionName,
+                        versionCode = entity.versionCode,
+                        iconUrl = entity.iconUrl,
+                        downloadUrl = entity.downloadUrl,
+                        license = entity.license,
+                        webSite = entity.webSite,
+                        sourceCode = entity.sourceCode,
+                        categories = entity.categories,
+                        size = entity.size,
+                        minSdkVersion = entity.minSdkVersion,
+                        lastUpdated = entity.lastUpdated,
+                        added = entity.added,
+                        suggestedVersionCode = entity.suggestedVersionCode,
+                        repoName = entity.repoName,
+                        repoAddress = entity.repoAddress
+                    )
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to search F-Droid apps", e)
+                _fdroidApps.value = emptyList()
+            } finally {
+                _isSearchingFdroid.value = false
+            }
+        }
+    }
+
     fun fetchSuggestions(query: String) {
         viewModelScope.launch(Dispatchers.IO) {
             _suggestions.value = contract.searchSuggestions(query)
                 .filter { it.title.isNotBlank() }
                 .take(3)
         }
+    }
+
+    fun clearFDroidResults() {
+        _fdroidApps.value = emptyList()
     }
 }
