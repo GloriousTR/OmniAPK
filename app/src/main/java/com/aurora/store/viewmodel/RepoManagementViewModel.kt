@@ -4,7 +4,10 @@ import android.content.Context
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.work.BackoffPolicy
+import androidx.work.Constraints
 import androidx.work.ExistingWorkPolicy
+import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
@@ -18,6 +21,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 @HiltViewModel
@@ -116,13 +120,25 @@ class RepoManagementViewModel @Inject constructor(
         
         _syncState.value = SyncState.Syncing()
         
+        // Configure constraints to ensure sync only runs under optimal conditions
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED) // Require internet connection
+            .setRequiresBatteryNotLow(false) // Allow sync even on low battery (user initiated)
+            .build()
+        
         val syncRequest = OneTimeWorkRequestBuilder<FDroidSyncWorker>()
+            .setConstraints(constraints)
+            .setBackoffCriteria(
+                BackoffPolicy.EXPONENTIAL,
+                30, // Initial backoff delay in seconds
+                TimeUnit.SECONDS
+            )
             .build()
         
         WorkManager.getInstance(context)
             .enqueueUniqueWork(
                 FDroidSyncWorker.WORK_NAME,
-                ExistingWorkPolicy.KEEP,
+                ExistingWorkPolicy.KEEP, // Don't start a new sync if one is already running
                 syncRequest
             )
     }

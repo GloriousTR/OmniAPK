@@ -42,6 +42,7 @@ object RoomModule {
         )
         .addTypeConverter(downloadConverter)
         .fallbackToDestructiveMigration()
+        .setJournalMode(androidx.room.RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING) // Enable WAL for better concurrency
         .build()
 
     @Provides
