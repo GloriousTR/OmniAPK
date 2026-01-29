@@ -56,14 +56,6 @@ class FDroidSyncWorker @AssistedInject constructor(
         .followRedirects(true)
         .retryOnConnectionFailure(true)
         .build()
-    
-    // Chunk size for batch database operations to prevent memory issues
-    private companion object {
-        private const val TAG = "FDroidSyncWorker"
-        const val WORK_NAME = "fdroid_sync"
-        private const val BATCH_SIZE = 100 // Process apps in batches of 100
-        private const val VERSION_BATCH_SIZE = 50 // Process versions in smaller batches
-    }
 
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
         Log.i(TAG, "Starting F-Droid sync")
@@ -193,9 +185,7 @@ class FDroidSyncWorker @AssistedInject constructor(
                 
                 // Insert chunk to database
                 if (chunkApps.isNotEmpty()) {
-                    withContext(Dispatchers.IO) {
-                        fdroidAppDao.insertApps(chunkApps)
-                    }
+                    fdroidAppDao.insertApps(chunkApps)
                     allApps.addAll(chunkApps)
                     
                     Log.d(TAG, "Inserted chunk ${chunkIndex + 1}: ${chunkApps.size} apps from ${repo.name}")
@@ -204,9 +194,7 @@ class FDroidSyncWorker @AssistedInject constructor(
                 // Insert versions in smaller batches to avoid memory issues
                 if (chunkVersions.isNotEmpty()) {
                     chunkVersions.chunked(VERSION_BATCH_SIZE).forEach { versionBatch ->
-                        withContext(Dispatchers.IO) {
-                            fdroidAppDao.insertVersions(versionBatch)
-                        }
+                        fdroidAppDao.insertVersions(versionBatch)
                     }
                     Log.d(TAG, "Inserted ${chunkVersions.size} versions for chunk ${chunkIndex + 1}")
                 }
@@ -352,7 +340,7 @@ class FDroidSyncWorker @AssistedInject constructor(
                             hash = hash,
                             hashType = hashType,
                             repoName = repo.name,
-                            releaseNotes = ""
+                            releaseNotes = "" // Per-version release notes are tricky in index-v1 JSON, usually in localized description
                         )
                     )
                 }
@@ -389,7 +377,11 @@ class FDroidSyncWorker @AssistedInject constructor(
     companion object {
         private const val TAG = "FDroidSyncWorker"
         const val WORK_NAME = "fdroid_sync"
+        // Chunk size for batch database operations to prevent memory issues
+        private const val BATCH_SIZE = 100 // Process apps in batches of 100
+        private const val VERSION_BATCH_SIZE = 50 // Process versions in smaller batches
     }
+    
     private fun JSONObject.optLocalized(key: String, default: String): String {
         val value = this.opt(key)
         if (value is JSONObject) {
