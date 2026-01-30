@@ -12,22 +12,18 @@ import android.os.Build
 import android.util.Log
 import android.view.ViewGroup
 import android.webkit.CookieManager
-import android.webkit.DownloadListener
 import android.webkit.URLUtil
 import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
@@ -40,16 +36,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -74,6 +64,10 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
 import java.io.FileOutputStream
+import java.util.UUID
+import java.util.concurrent.TimeUnit
+
+private const val TAG = "WebViewDownloader"
 
 /**
  * Download state for WebView downloads
@@ -88,38 +82,142 @@ sealed class WebDownloadState {
 }
 
 /**
- * WebView-based download dialog for APKMirror and APKPure
- * Allows users to browse the sites and intercepts download requests
+ * Shared OkHttpClient with proper timeout configuration
  */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun WebViewDownloadSheet(
-    source: String,
-    packageName: String,
-    appName: String,
-    isVisible: Boolean,
-    onDismiss: () -> Unit
+private val downloadClient: OkHttpClient by lazy {
+    OkHttpClient.Builder()
+        .followRedirects(true)
+        .connectTimeout(30, TimeUnit.SECONDS)
+        .readTimeout(60, TimeUnit.SECONDS)
+        .writeTimeout(60, TimeUnit.SECONDS)
+        .build()
+}
+
+/**
+ * Downloads a file from URL and installs it
+ * @return Updated download state
+ */
+private suspend fun performDownloadAndInstall(
+    context: Context,
+    url: String,
+    fileName: String,
+    userAgent: String,
+    cookies: String?,
+    onProgress: (WebDownloadState) -> Unit
 ) {
-    if (!isVisible) return
+    var file: File? = null
     
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = sheetState,
-        modifier = Modifier.fillMaxSize()
-    ) {
-        WebViewDownloadContent(
-            source = source,
-            packageName = packageName,
-            appName = appName,
-            onDismiss = onDismiss
-        )
+    try {
+        val downloadDir = File(context.getExternalFilesDir(null), "alternative_downloads")
+        if (!downloadDir.exists() && !downloadDir.mkdirs()) {
+            onProgress(WebDownloadState.Error("Cannot create download directory"))
+            return
+        }
+        
+        // Generate unique filename to avoid collisions
+        val uniqueFileName = "${UUID.randomUUID().toString().take(8)}_$fileName"
+        file = File(downloadDir, uniqueFileName)
+        
+        onProgress(WebDownloadState.Downloading(0, fileName))
+        
+        val requestBuilder = Request.Builder()
+            .url(url)
+            .header("User-Agent", userAgent)
+            .header("Accept", "*/*")
+            .header("Accept-Encoding", "gzip, deflate, br")
+        
+        if (!cookies.isNullOrEmpty()) {
+            requestBuilder.header("Cookie", cookies)
+        }
+        
+        val response = withContext(Dispatchers.IO) {
+            downloadClient.newCall(requestBuilder.build()).execute()
+        }
+        
+        response.use { resp ->
+            if (!resp.isSuccessful) {
+                file?.delete()
+                onProgress(WebDownloadState.Error("HTTP ${resp.code}: ${resp.message}"))
+                return
+            }
+            
+            val body = resp.body
+            if (body == null) {
+                file?.delete()
+                onProgress(WebDownloadState.Error("Empty response"))
+                return
+            }
+            
+            val totalBytes = body.contentLength()
+            var downloadedBytes = 0L
+            
+            withContext(Dispatchers.IO) {
+                body.byteStream().use { input ->
+                    FileOutputStream(file).use { output ->
+                        val buffer = ByteArray(8192)
+                        var bytesRead: Int
+                        while (input.read(buffer).also { bytesRead = it } != -1) {
+                            output.write(buffer, 0, bytesRead)
+                            downloadedBytes += bytesRead
+                            
+                            if (totalBytes > 0) {
+                                val progress = ((downloadedBytes * 100) / totalBytes).toInt()
+                                onProgress(WebDownloadState.Downloading(progress, fileName))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        Log.i(TAG, "Download complete: ${file.absolutePath}")
+        onProgress(WebDownloadState.Downloaded(file))
+        
+        // Auto-install after download
+        onProgress(WebDownloadState.Installing(file))
+        val installer = XAPKInstaller(context)
+        val result = installer.installAuto(file)
+        
+        val finalState = when (result) {
+            is InstallResult.Success -> WebDownloadState.Installed(true, null)
+            is InstallResult.Error -> WebDownloadState.Installed(false, result.message)
+        }
+        onProgress(finalState)
+        
+    } catch (e: Exception) {
+        Log.e(TAG, "Download failed", e)
+        // Clean up partial file on error
+        file?.let { 
+            if (it.exists()) {
+                it.delete()
+                Log.d(TAG, "Cleaned up partial download: ${it.name}")
+            }
+        }
+        onProgress(WebDownloadState.Error(e.message ?: "Download failed"))
     }
 }
 
 /**
- * Alternative: Full-screen dialog version
+ * Checks if the file is an APK-type file
+ */
+private fun isApkDownload(fileName: String, mimetype: String?): Boolean {
+    // Primary check: file extension (most reliable)
+    val validExtensions = listOf(".apk", ".xapk", ".apks", ".apkm")
+    val hasValidExtension = validExtensions.any { fileName.endsWith(it, ignoreCase = true) }
+    
+    // Secondary check: MIME type
+    val hasValidMimetype = mimetype?.let {
+        it.contains("android.package", ignoreCase = true) ||
+        it.contains("vnd.android", ignoreCase = true) ||
+        it == "application/octet-stream" // Generic binary (common for APKs)
+    } ?: false
+    
+    return hasValidExtension || hasValidMimetype
+}
+
+/**
+ * WebView-based download dialog for APKMirror and APKPure
+ * Allows users to browse the sites and intercepts download requests
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -148,87 +246,6 @@ fun WebViewDownloadDialog(
             "APKMirror" -> "https://www.apkmirror.com/?post_type=app_release&searchtype=apk&s=${packageName}"
             "APKPure" -> "https://apkpure.com/search?q=${packageName}"
             else -> "https://www.apkmirror.com/?post_type=app_release&searchtype=apk&s=${packageName}"
-        }
-    }
-    
-    // Download function
-    suspend fun downloadFile(url: String, fileName: String, userAgent: String, cookies: String?) {
-        downloadState = WebDownloadState.Downloading(0, fileName)
-        
-        try {
-            val downloadDir = File(context.getExternalFilesDir(null), "alternative_downloads")
-            if (!downloadDir.exists()) {
-                downloadDir.mkdirs()
-            }
-            
-            val file = File(downloadDir, fileName)
-            
-            val client = OkHttpClient.Builder()
-                .followRedirects(true)
-                .build()
-            
-            val requestBuilder = Request.Builder()
-                .url(url)
-                .header("User-Agent", userAgent)
-                .header("Accept", "*/*")
-                .header("Accept-Encoding", "gzip, deflate, br")
-            
-            // Add cookies if available
-            if (!cookies.isNullOrEmpty()) {
-                requestBuilder.header("Cookie", cookies)
-            }
-            
-            val response = withContext(Dispatchers.IO) {
-                client.newCall(requestBuilder.build()).execute()
-            }
-            
-            if (!response.isSuccessful) {
-                downloadState = WebDownloadState.Error("HTTP ${response.code}: ${response.message}")
-                return
-            }
-            
-            val body = response.body ?: run {
-                downloadState = WebDownloadState.Error("Empty response")
-                return
-            }
-            
-            val totalBytes = body.contentLength()
-            var downloadedBytes = 0L
-            
-            withContext(Dispatchers.IO) {
-                body.byteStream().use { input ->
-                    FileOutputStream(file).use { output ->
-                        val buffer = ByteArray(8192)
-                        var bytesRead: Int
-                        while (input.read(buffer).also { bytesRead = it } != -1) {
-                            output.write(buffer, 0, bytesRead)
-                            downloadedBytes += bytesRead
-                            
-                            if (totalBytes > 0) {
-                                val progress = ((downloadedBytes * 100) / totalBytes).toInt()
-                                downloadState = WebDownloadState.Downloading(progress, fileName)
-                            }
-                        }
-                    }
-                }
-            }
-            
-            Log.i("WebViewDownloader", "Download complete: ${file.absolutePath}")
-            downloadState = WebDownloadState.Downloaded(file)
-            
-            // Auto-install after download
-            downloadState = WebDownloadState.Installing(file)
-            val installer = XAPKInstaller(context)
-            val result = installer.installAuto(file)
-            
-            downloadState = when (result) {
-                is InstallResult.Success -> WebDownloadState.Installed(true, null)
-                is InstallResult.Error -> WebDownloadState.Installed(false, result.message)
-            }
-            
-        } catch (e: Exception) {
-            Log.e("WebViewDownloader", "Download failed", e)
-            downloadState = WebDownloadState.Error(e.message ?: "Download failed")
         }
     }
     
@@ -266,7 +283,7 @@ fun WebViewDownloadDialog(
         },
         modifier = Modifier
             .fillMaxWidth()
-            .height(600.dp),
+            .height(550.dp),
         title = {
             Column {
                 Row(
@@ -322,7 +339,14 @@ fun WebViewDownloadDialog(
                 factory = { ctx ->
                     createWebView(ctx, initialUrl) { url, fileName, userAgent, cookies ->
                         scope.launch {
-                            downloadFile(url, fileName, userAgent, cookies)
+                            performDownloadAndInstall(
+                                context = ctx,
+                                url = url,
+                                fileName = fileName,
+                                userAgent = userAgent,
+                                cookies = cookies,
+                                onProgress = { downloadState = it }
+                            )
                         }
                     }.apply {
                         webView = this
@@ -367,6 +391,7 @@ fun WebViewDownloadDialog(
 
 /**
  * Creates a WebView configured for downloading APKs
+ * JavaScript is required for APKMirror/APKPure functionality
  */
 @SuppressLint("SetJavaScriptEnabled")
 private fun createWebView(
@@ -380,280 +405,47 @@ private fun createWebView(
             ViewGroup.LayoutParams.MATCH_PARENT
         )
         
-        // Cookie settings
+        // Cookie settings for CloudFlare bypass
         val cookieManager = CookieManager.getInstance()
         cookieManager.setAcceptCookie(true)
         cookieManager.setAcceptThirdPartyCookies(this, true)
         
-        // WebView settings
+        // WebView settings - JavaScript required for modern websites
         settings.apply {
-            javaScriptEnabled = true
+            javaScriptEnabled = true  // Required for APKMirror/APKPure to work
             domStorageEnabled = true
             allowContentAccess = true
-            allowFileAccess = true
+            allowFileAccess = false  // Security: disable file access
             loadWithOverviewMode = true
             useWideViewPort = true
             builtInZoomControls = true
             displayZoomControls = false
             cacheMode = WebSettings.LOAD_DEFAULT
-            mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
+            mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW  // Security: block mixed content
             
-            // Modern user agent
+            // Modern user agent based on device
             userAgentString = "Mozilla/5.0 (Linux; Android ${Build.VERSION.RELEASE}; ${Build.MODEL}) " +
-                    "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36"
-            
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                safeBrowsingEnabled = false
-            }
+                    "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
         }
         
         // Intercept download requests
         setDownloadListener { url, userAgent, contentDisposition, mimetype, contentLength ->
-            Log.d("WebViewDownloader", "Download requested: $url, mime: $mimetype, size: $contentLength")
+            Log.d(TAG, "Download requested: $url, mime: $mimetype, size: $contentLength")
             
             // Determine filename
             val fileName = URLUtil.guessFileName(url, contentDisposition, mimetype)
-                ?: "${System.currentTimeMillis()}.apk"
+                ?: "download_${System.currentTimeMillis()}.apk"
             
-            // Check if it's an APK/XAPK file
-            val isApkFile = fileName.endsWith(".apk", ignoreCase = true) ||
-                    fileName.endsWith(".xapk", ignoreCase = true) ||
-                    fileName.endsWith(".apks", ignoreCase = true) ||
-                    fileName.endsWith(".apkm", ignoreCase = true) ||
-                    mimetype?.contains("android", ignoreCase = true) == true ||
-                    mimetype?.contains("apk", ignoreCase = true) == true ||
-                    url.contains(".apk", ignoreCase = true)
-            
-            if (isApkFile) {
-                // Get cookies for this URL
+            // Check if it's an APK file
+            if (isApkDownload(fileName, mimetype)) {
                 val cookies = CookieManager.getInstance().getCookie(url)
                 onDownloadRequest(url, fileName, userAgent, cookies)
             } else {
-                Log.w("WebViewDownloader", "Non-APK download ignored: $fileName ($mimetype)")
+                Log.w(TAG, "Non-APK download ignored: $fileName ($mimetype)")
             }
         }
         
         loadUrl(initialUrl)
-    }
-}
-
-/**
- * Content for WebView download (can be used in sheet or dialog)
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun WebViewDownloadContent(
-    source: String,
-    packageName: String,
-    appName: String,
-    onDismiss: () -> Unit
-) {
-    var downloadState by remember { mutableStateOf<WebDownloadState>(WebDownloadState.Idle) }
-    var webView by remember { mutableStateOf<WebView?>(null) }
-    var pageProgress by remember { mutableFloatStateOf(0f) }
-    var isLoading by remember { mutableStateOf(true) }
-    var canGoBack by remember { mutableStateOf(false) }
-    
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    
-    val initialUrl = remember(source, packageName) {
-        when (source) {
-            "APKMirror" -> "https://www.apkmirror.com/?post_type=app_release&searchtype=apk&s=${packageName}"
-            "APKPure" -> "https://apkpure.com/search?q=${packageName}"
-            else -> "https://www.apkmirror.com/?post_type=app_release&searchtype=apk&s=${packageName}"
-        }
-    }
-    
-    // Download function
-    suspend fun downloadFile(url: String, fileName: String, userAgent: String, cookies: String?) {
-        downloadState = WebDownloadState.Downloading(0, fileName)
-        
-        try {
-            val downloadDir = File(context.getExternalFilesDir(null), "alternative_downloads")
-            if (!downloadDir.exists()) {
-                downloadDir.mkdirs()
-            }
-            
-            val file = File(downloadDir, fileName)
-            
-            val client = OkHttpClient.Builder()
-                .followRedirects(true)
-                .build()
-            
-            val requestBuilder = Request.Builder()
-                .url(url)
-                .header("User-Agent", userAgent)
-                .header("Accept", "*/*")
-            
-            if (!cookies.isNullOrEmpty()) {
-                requestBuilder.header("Cookie", cookies)
-            }
-            
-            val response = withContext(Dispatchers.IO) {
-                client.newCall(requestBuilder.build()).execute()
-            }
-            
-            if (!response.isSuccessful) {
-                downloadState = WebDownloadState.Error("HTTP ${response.code}")
-                return
-            }
-            
-            val body = response.body ?: run {
-                downloadState = WebDownloadState.Error("Empty response")
-                return
-            }
-            
-            val totalBytes = body.contentLength()
-            var downloadedBytes = 0L
-            
-            withContext(Dispatchers.IO) {
-                body.byteStream().use { input ->
-                    FileOutputStream(file).use { output ->
-                        val buffer = ByteArray(8192)
-                        var bytesRead: Int
-                        while (input.read(buffer).also { bytesRead = it } != -1) {
-                            output.write(buffer, 0, bytesRead)
-                            downloadedBytes += bytesRead
-                            
-                            if (totalBytes > 0) {
-                                val progress = ((downloadedBytes * 100) / totalBytes).toInt()
-                                downloadState = WebDownloadState.Downloading(progress, fileName)
-                            }
-                        }
-                    }
-                }
-            }
-            
-            downloadState = WebDownloadState.Downloaded(file)
-            
-            // Auto-install
-            downloadState = WebDownloadState.Installing(file)
-            val installer = XAPKInstaller(context)
-            val result = installer.installAuto(file)
-            
-            downloadState = when (result) {
-                is InstallResult.Success -> WebDownloadState.Installed(true, null)
-                is InstallResult.Error -> WebDownloadState.Installed(false, result.message)
-            }
-            
-        } catch (e: Exception) {
-            downloadState = WebDownloadState.Error(e.message ?: "Download failed")
-        }
-    }
-    
-    // Download status overlay
-    when (val state = downloadState) {
-        is WebDownloadState.Downloading,
-        is WebDownloadState.Downloaded,
-        is WebDownloadState.Installing,
-        is WebDownloadState.Installed,
-        is WebDownloadState.Error -> {
-            DownloadStatusDialog(
-                state = state,
-                onDismiss = {
-                    if (state is WebDownloadState.Installed || state is WebDownloadState.Error) {
-                        downloadState = WebDownloadState.Idle
-                        if (state is WebDownloadState.Installed && state.success) {
-                            onDismiss()
-                        }
-                    }
-                },
-                onRetry = {
-                    downloadState = WebDownloadState.Idle
-                }
-            )
-        }
-        else -> {}
-    }
-    
-    Scaffold(
-        topBar = {
-            Column {
-                @OptIn(ExperimentalMaterial3Api::class)
-                TopAppBar(
-                    title = {
-                        Text(
-                            text = "$source - $appName",
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    },
-                    navigationIcon = {
-                        if (canGoBack) {
-                            IconButton(onClick = { webView?.goBack() }) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                    contentDescription = stringResource(R.string.action_back)
-                                )
-                            }
-                        }
-                    },
-                    actions = {
-                        IconButton(onClick = { webView?.reload() }) {
-                            Icon(
-                                imageVector = Icons.Default.Refresh,
-                                contentDescription = stringResource(R.string.action_refresh)
-                            )
-                        }
-                        IconButton(onClick = {
-                            webView?.destroy()
-                            onDismiss()
-                        }) {
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = stringResource(R.string.action_close)
-                            )
-                        }
-                    }
-                )
-                
-                if (isLoading) {
-                    LinearProgressIndicator(
-                        progress = { pageProgress },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            }
-        }
-    ) { padding ->
-        AndroidView(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
-            factory = { ctx ->
-                createWebView(ctx, initialUrl) { url, fileName, userAgent, cookies ->
-                    scope.launch {
-                        downloadFile(url, fileName, userAgent, cookies)
-                    }
-                }.apply {
-                    webView = this
-                    
-                    webChromeClient = object : WebChromeClient() {
-                        override fun onProgressChanged(view: WebView?, newProgress: Int) {
-                            pageProgress = newProgress / 100f
-                            isLoading = newProgress < 100
-                        }
-                    }
-                    
-                    webViewClient = object : WebViewClient() {
-                        override fun onPageFinished(view: WebView?, url: String?) {
-                            super.onPageFinished(view, url)
-                            canGoBack = view?.canGoBack() ?: false
-                        }
-                    }
-                }
-            },
-            update = { view ->
-                canGoBack = view.canGoBack()
-            }
-        )
-    }
-    
-    DisposableEffect(Unit) {
-        onDispose {
-            webView?.destroy()
-        }
     }
 }
 
