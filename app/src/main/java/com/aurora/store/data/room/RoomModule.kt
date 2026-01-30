@@ -8,10 +8,11 @@ import com.aurora.store.data.room.MigrationHelper.MIGRATION_3_4
 import com.aurora.store.data.room.MigrationHelper.MIGRATION_4_5
 import com.aurora.store.data.room.MigrationHelper.MIGRATION_5_6
 import com.aurora.store.data.room.MigrationHelper.MIGRATION_6_7
+import com.aurora.store.data.room.MigrationHelper.MIGRATION_7_8
+import com.aurora.store.data.room.MigrationHelper.MIGRATION_8_9
 import com.aurora.store.data.room.download.DownloadConverter
 import com.aurora.store.data.room.download.DownloadDao
 import com.aurora.store.data.room.favourite.FavouriteDao
-import com.aurora.store.data.room.fdroid.FDroidAppDao
 import com.aurora.store.data.room.update.UpdateDao
 import dagger.Module
 import dagger.Provides
@@ -38,7 +39,9 @@ object RoomModule {
             MIGRATION_3_4,
             MIGRATION_4_5,
             MIGRATION_5_6,
-            MIGRATION_6_7
+            MIGRATION_6_7,
+            MIGRATION_7_8,
+            MIGRATION_8_9
         )
         .addTypeConverter(downloadConverter)
         .fallbackToDestructiveMigration()
@@ -55,8 +58,4 @@ object RoomModule {
 
     @Provides
     fun providesUpdateDao(auroraDatabase: AuroraDatabase): UpdateDao = auroraDatabase.updateDao()
-
-    @Provides
-    fun providesFDroidAppDao(auroraDatabase: AuroraDatabase): FDroidAppDao = 
-        auroraDatabase.fdroidAppDao()
 }

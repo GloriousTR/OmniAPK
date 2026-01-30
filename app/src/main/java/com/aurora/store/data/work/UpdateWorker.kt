@@ -68,7 +68,7 @@ class UpdateWorker @AssistedInject constructor(
         get() = Preferences.getBoolean(context, Preferences.PREFERENCE_FILTER_AURORA_ONLY, false)
 
     private val isFDroidFilterEnabled: Boolean
-        get() = Preferences.getBoolean(context, Preferences.PREFERENCE_FILTER_FDROID)
+        get() = Preferences.getBoolean(context, Preferences.PREFERENCE_FILTER_FDROID, true)
 
     private val isExtendedUpdateEnabled: Boolean
         get() = Preferences.getBoolean(context, Preferences.PREFERENCE_UPDATES_EXTENDED)

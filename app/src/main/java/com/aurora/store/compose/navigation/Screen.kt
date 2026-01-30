@@ -32,9 +32,6 @@ sealed class Screen : NavKey, Parcelable {
     data class AppDetails(val packageName: String) : Screen()
 
     @Serializable
-    data class FDroidAppDetails(val packageName: String) : Screen()
-
-    @Serializable
     data object Search : Screen()
 
     @Serializable

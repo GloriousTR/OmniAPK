@@ -58,7 +58,6 @@ class MainActivity : AppCompatActivity() {
     private val topLevelFrags = listOf(
         R.id.appsContainerFragment,
         R.id.gamesContainerFragment,
-        R.id.openSourceFragment,
         R.id.updatesFragment
     )
 
@@ -115,8 +114,7 @@ class MainActivity : AppCompatActivity() {
         // Handle quick exit from back actions
         val defaultTab = when (Preferences.getInteger(this, PREFERENCE_DEFAULT_SELECTED_TAB)) {
             1 -> R.id.gamesContainerFragment
-            2 -> R.id.openSourceFragment
-            3 -> R.id.updatesFragment
+            2 -> R.id.updatesFragment
             else -> R.id.appsContainerFragment
         }
         onBackPressedDispatcher.addCallback(this) {

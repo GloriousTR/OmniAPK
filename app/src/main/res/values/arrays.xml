@@ -118,7 +118,6 @@
     <string-array name="pref_default_tab">
         <item>@string/title_apps</item>
         <item>@string/title_games</item>
-        <item>@string/title_open_source</item>
         <item>@string/title_updates</item>
     </string-array>
 
@@ -126,7 +125,6 @@
         <item>0</item>
         <item>1</item>
         <item>2</item>
-        <item>3</item>
     </string-array>
 
     <string-array name="filterRatingValues" translatable="false">
