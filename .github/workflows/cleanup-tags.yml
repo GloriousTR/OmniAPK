@@ -1,0 +1,104 @@
+name: Cleanup All Tags
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_cleanup:
+        description: 'Tüm tag ve release işlemlerini silmek için "DELETE" yazın'
+        required: true
+        default: ''
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Validate Confirmation
+      if: github.event.inputs.confirm_cleanup != 'DELETE'
+      run: |
+        echo "❌ Hata: Silme işlemini onaylamak için 'DELETE' yazmanız gerekiyor."
+        echo "Girilen değer: '${{ github.event.inputs.confirm_cleanup }}'"
+        exit 1
+
+    - name: Delete All Releases
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        echo "🗑️ Tüm release'ler siliniyor..."
+        
+        # Get all release IDs and delete them
+        # Get all releases (limit 1000 should cover most cases)
+        RELEASES=$(gh release list --limit 1000 --json tagName -q '.[].tagName' 2>/dev/null || echo "")
+        
+        if [ -z "$RELEASES" ]; then
+          echo "📝 Silinecek release bulunamadı."
+        else
+          echo "Bulunan release'ler:"
+          echo "$RELEASES"
+          echo ""
+          
+          for TAG in $RELEASES; do
+            echo "Siliniyor: $TAG"
+            # --cleanup-tag kullanmıyoruz, tag silme işlemi ayrı adımda yapılacak
+            gh release delete "$TAG" --yes 2>/dev/null || echo "  ⚠️ $TAG silinemedi (zaten silinmiş olabilir)"
+          done
+          
+          echo "✅ Tüm release'ler silindi."
+        fi
+
+    - name: Delete All Remote Tags
+      run: |
+        echo "🗑️ Tüm uzak tag'ler siliniyor..."
+        
+        git fetch --tags --force
+        
+        # Get all tags
+        TAGS=$(git tag -l)
+        
+        if [ -z "$TAGS" ]; then
+          echo "📝 Silinecek tag bulunamadı."
+        else
+          echo "Bulunan tag'ler:"
+          echo "$TAGS"
+          echo ""
+          
+          # Delete each tag from remote
+          for TAG in $TAGS; do
+            echo "Uzaktan siliniyor: $TAG"
+            git push origin --delete "refs/tags/$TAG" 2>/dev/null || echo "  ⚠️ $TAG silinemedi (zaten silinmiş olabilir)"
+          done
+          
+          echo "✅ Tüm uzak tag'ler silindi."
+        fi
+
+    - name: Summary
+      run: |
+        echo ""
+        echo "================================================"
+        echo "✅ TEMİZLİK TAMAMLANDI"
+        echo "================================================"
+        echo ""
+        
+        # Doğrulama: Kalan tag'leri kontrol et
+        git fetch --tags --force
+        REMAINING_TAGS=$(git tag -l | wc -l)
+        
+        if [ "$REMAINING_TAGS" -eq 0 ]; then
+          echo "✅ Tüm tag'ler başarıyla silindi."
+        else
+          echo "⚠️ Kalan tag sayısı: $REMAINING_TAGS"
+          echo "Kalan tag'ler:"
+          git tag -l
+        fi
+        
+        echo ""
+        echo "Artık 'Build Android APK (Fresh)' workflow'u"
+        echo "v1-0'dan temiz bir başlangıç yapacak."
+        echo ""
