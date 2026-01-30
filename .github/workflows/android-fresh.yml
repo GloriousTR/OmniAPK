@@ -34,7 +34,7 @@ jobs:
         git fetch --tags --force
         
         # Find latest tag matching vX.Y pattern
-        LATEST_TAG=$(git tag -l "v*.*" | grep -E "^v[0-9]+\.[0-9]$" | sort -V | tail -n 1)
+        LATEST_TAG=$(git tag -l "v*.*" | { grep -E "^v[0-9]+\.[0-9]$" || true; } | sort -V | tail -n 1)
         echo "Found Latest Tag: $LATEST_TAG"
         
         if [ -z "$LATEST_TAG" ]; then
@@ -102,10 +102,10 @@ jobs:
           echo "STORE_FILE=../release.keystore" >> signing.properties
           
           # Build with --info for detailed output
-          ./gradlew assembleVanillaRelease --info --stacktrace --no-configuration-cache
+          ./gradlew assembleVanillaRelease --info --stacktrace --warning-mode=all --no-configuration-cache
         else
           echo "Building DEBUG APK (no keystore configured)..."
-          ./gradlew assembleVanillaDebug --info --stacktrace --no-configuration-cache
+          ./gradlew assembleVanillaDebug --info --stacktrace --warning-mode=all --no-configuration-cache
         fi
 
     - name: List Build Outputs
