@@ -151,30 +151,54 @@ class APKMirrorProvider @Inject constructor(
     
     /**
      * Parse versions from a document using multiple selector strategies
+     * Inspired by https://github.com/tanishqmanuja/apkmirror-downloader
      */
     private fun parseVersionsFromDocument(doc: Document, packageName: String): List<AppVersion> {
         val versions = mutableListOf<AppVersion>()
         
-        // Try multiple selectors for version list - APKMirror changes structure
-        val rows = doc.select("div.listWidget div.appRow").ifEmpty { 
-            doc.select(".table-row").ifEmpty {
-                doc.select("div.appRowVariantTag").ifEmpty {
-                    doc.select("div[class*=appRow]").ifEmpty {
-                        doc.select(".widgetRow")
+        // Check for CloudFlare protection
+        if (doc.text().contains("Enable JavaScript and cookies to continue")) {
+            Log.w(TAG, "CloudFlare protection detected for $packageName")
+            return emptyList()
+        }
+        
+        // Primary selector from apkmirror-downloader: .listWidget with all_versions anchor
+        // Then fall back to other selectors
+        val versionTable = doc.select(".listWidget:has(a[name=all_versions])").first()
+        
+        val rows = if (versionTable != null) {
+            // Skip first 2 rows (header) and last row (more link) as per apkmirror-downloader
+            val children = versionTable.children()
+            if (children.size > 3) {
+                children.subList(2, children.size - 1)
+            } else {
+                children.toList()
+            }
+        } else {
+            // Fallback to other selectors
+            doc.select("div.listWidget div.appRow").ifEmpty { 
+                doc.select(".table-row").ifEmpty {
+                    doc.select(".variants-table .table-row").ifEmpty {
+                        doc.select("div.appRowVariantTag").ifEmpty {
+                            doc.select("div[class*=appRow]").ifEmpty {
+                                doc.select(".widgetRow")
+                            }
+                        }
                     }
                 }
-            }
+            }.toList()
         }
         
         Log.d(TAG, "Found ${rows.size} version rows for $packageName")
         
         rows.take(30).forEach { row ->
             try {
-                // Try multiple link selectors
-                val link = row.select("a.fontBlack").first()
+                // Try selector from apkmirror-downloader first: .table-cell a
+                val link = row.select(".table-cell").getOrNull(1)?.select("a")?.first()
+                    ?: row.select(".table-cell a").first()
+                    ?: row.select("a.fontBlack").first()
                     ?: row.select("a[class*=fontBlack]").first()
                     ?: row.select("h5.appRowTitle a").first()
-                    ?: row.select("a[href*=download]").first()
                     ?: row.select("a[href*=release]").first()
                     ?: row.select("a").first()
                 
@@ -290,6 +314,7 @@ class APKMirrorProvider @Inject constructor(
     /**
      * Get download URL for a specific version
      * Navigates through APKMirror's multi-step download process
+     * Selectors inspired by https://github.com/tanishqmanuja/apkmirror-downloader
      */
     suspend fun getDownloadUrl(versionPageUrl: String): String? = withContext(Dispatchers.IO) {
         try {
@@ -297,60 +322,74 @@ class APKMirrorProvider @Inject constructor(
             
             var doc = createConnection(versionPageUrl).get()
             
-            // Step 1: We are on version page, need to find variant or direct download
-            // APKMirror often lists variants (verified, beta, arm64, etc.)
-            
-            // Try to find "Download APK" button/link
-            var nextLink = doc.select("a:contains(Download APK)").attr("href").ifEmpty {
-                doc.select("a.downloadButton").attr("href").ifEmpty {
-                    doc.select("a[href*=download]").attr("href")
-                }
+            // Check for CloudFlare protection
+            if (doc.text().contains("Enable JavaScript and cookies to continue")) {
+                Log.w(TAG, "CloudFlare protection detected")
+                return@withContext null
             }
             
-            if (nextLink.isEmpty()) {
-                // Check for variant selection - pick first available variant
-                val variantRows = doc.select(".table-row, .variants-table tr, div[class*=variant]")
+            // Step 1: We are on version page, might need to select a variant first
+            // Check if there's a variants table (.variants-table)
+            val variantsTable = doc.select(".variants-table").first()
+            
+            var downloadButtonUrl: String? = null
+            
+            if (variantsTable != null) {
+                // Parse variants table and pick the first suitable one
+                val variantRows = variantsTable.children().drop(1) // Skip header row
                 
-                for (variantRow in variantRows) {
-                    val variantHref = variantRow.select("a.accent_color, a[href*=variant], a").attr("href")
-                    if (variantHref.isNotEmpty() && !variantHref.contains("javascript", ignoreCase = true)) {
-                        Log.d(TAG, "Following variant link: $variantHref")
-                        val variantUrl = if (variantHref.startsWith("http")) variantHref else "$BASE_URL$variantHref"
+                for (row in variantRows) {
+                    // From apkmirror-downloader: variant download link is in the 5th cell
+                    val variantLink = row.select(".table-cell").getOrNull(4)?.select("a")?.attr("href")
+                        ?: row.select(".table-cell a").attr("href")
+                        ?: row.select("a").attr("href")
+                    
+                    if (variantLink.isNotEmpty() && !variantLink.contains("javascript", ignoreCase = true)) {
+                        Log.d(TAG, "Found variant link: $variantLink")
+                        val variantUrl = if (variantLink.startsWith("http")) variantLink else "$BASE_URL$variantLink"
                         doc = createConnection(variantUrl).get()
-                        nextLink = doc.select("a:contains(Download APK)").attr("href").ifEmpty {
-                            doc.select("a.downloadButton").attr("href")
-                        }
-                        if (nextLink.isNotEmpty()) break
+                        break
                     }
                 }
             }
             
-            if (nextLink.isNotEmpty()) {
-                // Step 2: Navigate to "Download APK" page
-                val downloadPageUrl = if (nextLink.startsWith("http")) nextLink else "$BASE_URL$nextLink"
-                Log.d(TAG, "Navigating to download page: $downloadPageUrl")
-                doc = createConnection(downloadPageUrl).get()
-                
-                // Step 3: Find the final download link
-                // Usually it's a link with rel="nofollow" or specific class
-                val finalLink = doc.select("a.accent_bg.btn[href], a.downloadButton[href], a[rel=nofollow][href*=download]").attr("href").ifEmpty {
-                    doc.select("a.accent_bg[href]").attr("href").ifEmpty {
-                        // Try to find link with "click here" or "here" text
+            // Step 2: Find "Download APK" button
+            // From apkmirror-downloader: selector is `a.downloadButton`
+            downloadButtonUrl = doc.select("a.downloadButton").attr("href").ifEmpty {
+                doc.select("a:contains(Download APK)").attr("href").ifEmpty {
+                    doc.select("a[href*=-download]").attr("href")
+                }
+            }
+            
+            if (downloadButtonUrl.isNullOrEmpty()) {
+                Log.w(TAG, "Could not find download button for: $versionPageUrl")
+                return@withContext null
+            }
+            
+            // Step 3: Navigate to download button page
+            val downloadPageUrl = if (downloadButtonUrl.startsWith("http")) downloadButtonUrl else "$BASE_URL$downloadButtonUrl"
+            Log.d(TAG, "Navigating to download page: $downloadPageUrl")
+            doc = createConnection(downloadPageUrl).get()
+            
+            // Step 4: Find the final download link
+            // From apkmirror-downloader: selector is `.card-with-tabs a[href]`
+            val finalLink = doc.select(".card-with-tabs a[href]").attr("href").ifEmpty {
+                doc.select("a.accent_bg.btn[href]").attr("href").ifEmpty {
+                    doc.select("a[rel=nofollow][href*=download]").attr("href").ifEmpty {
                         doc.select("a:contains(here)[href]").attr("href").ifEmpty {
-                            // Last resort: find any download link
-                            doc.select("a[href*=.apk], a[href*=download][href*=force]").attr("href")
+                            doc.select("a[href*=.apk]").attr("href")
                         }
                     }
                 }
-                
-                if (finalLink.isNotEmpty()) {
-                    val downloadUrl = if (finalLink.startsWith("http")) finalLink else "$BASE_URL$finalLink"
-                    Log.d(TAG, "Found download URL: $downloadUrl")
-                    return@withContext downloadUrl
-                }
             }
             
-            Log.w(TAG, "Could not find download URL for: $versionPageUrl")
+            if (finalLink.isNotEmpty()) {
+                val downloadUrl = if (finalLink.startsWith("http")) finalLink else "$BASE_URL$finalLink"
+                Log.d(TAG, "Found download URL: $downloadUrl")
+                return@withContext downloadUrl
+            }
+            
+            Log.w(TAG, "Could not find final download URL for: $versionPageUrl")
             null
         } catch (e: Exception) {
             Log.e(TAG, "Get download URL failed for $versionPageUrl: ${e.message}", e)
