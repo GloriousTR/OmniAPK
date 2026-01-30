@@ -20,6 +20,7 @@ import android.webkit.WebViewClient
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -241,11 +242,13 @@ fun WebViewDownloadDialog(
     val scope = rememberCoroutineScope()
     
     // Build the initial URL based on source
+    // APKMirror: Uses direct app page URL format for faster navigation
+    // APKPure: Uses direct app page URL format for faster navigation
     val initialUrl = remember(source, packageName) {
         when (source) {
-            "APKMirror" -> "https://www.apkmirror.com/?post_type=app_release&searchtype=apk&s=${packageName}"
-            "APKPure" -> "https://apkpure.com/search?q=${packageName}"
-            else -> "https://www.apkmirror.com/?post_type=app_release&searchtype=apk&s=${packageName}"
+            "APKMirror" -> "https://www.apkmirror.com/apk/?q=${packageName}"
+            "APKPure" -> "https://apkpure.com/${packageName}"
+            else -> "https://www.apkmirror.com/apk/?q=${packageName}"
         }
     }
     
@@ -283,7 +286,7 @@ fun WebViewDownloadDialog(
         },
         modifier = Modifier
             .fillMaxWidth()
-            .height(550.dp),
+            .fillMaxHeight(0.9f),
         title = {
             Column {
                 Row(
