@@ -165,13 +165,14 @@ object MigrationHelper {
 
     /**
      * Add fdroid_versions table for F-Droid app versions (intermediate migration).
+     * Note: This table along with fdroid_apps is removed in migration 8_9 as F-Droid support was removed.
      */
     private fun migrateFrom7To8(database: SupportSQLiteDatabase) {
         database.beginTransaction()
         try {
+            // Create fdroid_versions table with proper schema
             database.execSQL(
                 """CREATE TABLE IF NOT EXISTS `fdroid_versions` (
-                    `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
                     `packageName` TEXT NOT NULL,
                     `versionName` TEXT NOT NULL,
                     `versionCode` INTEGER NOT NULL,
@@ -183,7 +184,8 @@ object MigrationHelper {
                     `hash` TEXT NOT NULL DEFAULT '',
                     `hashType` TEXT NOT NULL DEFAULT '',
                     `repoName` TEXT NOT NULL DEFAULT '',
-                    `releaseNotes` TEXT NOT NULL DEFAULT ''
+                    `releaseNotes` TEXT NOT NULL DEFAULT '',
+                    PRIMARY KEY(`packageName`, `versionCode`)
                 )"""
             )
             database.setTransactionSuccessful()
