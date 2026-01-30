@@ -55,3 +55,8 @@ signing.properties
 .kotlin/*
 legacy_backup/
 aurora_temp/
+
+# Script output files
+scripts/*.json
+__pycache__/
+*.pyc

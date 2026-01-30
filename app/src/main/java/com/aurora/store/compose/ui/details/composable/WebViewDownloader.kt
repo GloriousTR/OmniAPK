@@ -20,6 +20,7 @@ import android.webkit.WebViewClient
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -57,6 +58,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import com.aurora.store.R
 import com.aurora.store.data.installer.InstallResult
 import com.aurora.store.data.installer.XAPKInstaller
+import com.aurora.store.util.APKMirrorUrlHelper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -241,11 +243,13 @@ fun WebViewDownloadDialog(
     val scope = rememberCoroutineScope()
     
     // Build the initial URL based on source
+    // APKMirror: Uses direct app page for popular apps, fallback to search for others
+    // APKPure: Supports direct app page via /app/{packageName} format
     val initialUrl = remember(source, packageName) {
         when (source) {
-            "APKMirror" -> "https://www.apkmirror.com/?post_type=app_release&searchtype=apk&s=${packageName}"
-            "APKPure" -> "https://apkpure.com/search?q=${packageName}"
-            else -> "https://www.apkmirror.com/?post_type=app_release&searchtype=apk&s=${packageName}"
+            "APKMirror" -> APKMirrorUrlHelper.getUrl(packageName)
+            "APKPure" -> "https://apkpure.com/app/${packageName}"
+            else -> APKMirrorUrlHelper.getUrl(packageName)
         }
     }
     
@@ -283,7 +287,7 @@ fun WebViewDownloadDialog(
         },
         modifier = Modifier
             .fillMaxWidth()
-            .height(550.dp),
+            .fillMaxHeight(0.9f),
         title = {
             Column {
                 Row(
