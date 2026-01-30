@@ -30,25 +30,27 @@ jobs:
       id: version
       shell: bash
       run: |
-        NEXT_VERSION="1.0"
+        # New versioning scheme: 1.0, 1.1, 1.2, etc.
+        # Tags use format v1-X (e.g., v1-0, v1-1, v1-2)
+        # This avoids conflict with old tags (v1.0, v1.1, etc.)
         git fetch --tags --force
-        LATEST_TAG=$(git tag -l "v1.*" | grep -E "^v1\.[0-9]+$" | sort -V | tail -n 1)
-        echo "Found Latest Tag: $LATEST_TAG"
+        
+        # Find the latest tag in new format (v1-0, v1-1, v1-2, ...)
+        LATEST_TAG=$(git tag -l "v1-*" | grep -E "^v1-[0-9]+$" | sort -t'-' -k2 -n | tail -n 1)
+        
         if [ -z "$LATEST_TAG" ]; then
-           echo "No existing v1 tags found. Starting at 1.0"
+           echo "No existing v1-X tags found. Starting fresh at 1.0"
            NEXT_VERSION="1.0"
         else
-           CURRENT_MINOR=${LATEST_TAG#v1.}
-           if [[ "$CURRENT_MINOR" =~ ^[0-9]+$ ]]; then
-               NEXT_MINOR=$((CURRENT_MINOR + 1))
-               NEXT_VERSION="1.$NEXT_MINOR"
-           else
-               echo "Warning: Could not parse minor version from $LATEST_TAG. Defaulting to 1.0"
-               NEXT_VERSION="1.0" 
-           fi
+           echo "Found latest tag: $LATEST_TAG"
+           CURRENT_MINOR=${LATEST_TAG#v1-}
+           NEXT_MINOR=$((CURRENT_MINOR + 1))
+           NEXT_VERSION="1.$NEXT_MINOR"
+           echo "Incrementing from $LATEST_TAG to v1-$NEXT_MINOR (displayed as $NEXT_VERSION)"
         fi
-        echo "Calculated Version: $NEXT_VERSION"
+        
         echo "VERSION=$NEXT_VERSION" >> $GITHUB_OUTPUT
+        echo "TAG=v1-${NEXT_VERSION#1.}" >> $GITHUB_OUTPUT
 
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@v4
@@ -120,8 +122,8 @@ jobs:
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v2
       with:
-        tag_name: v${{ steps.version.outputs.VERSION }}
-        name: "OmniAPK v${{ steps.version.outputs.VERSION }}"
+        tag_name: ${{ steps.version.outputs.TAG }}
+        name: "OmniAPK ${{ steps.version.outputs.VERSION }}"
         draft: false
         prerelease: false
         files: app/build/outputs/**/OmniAPK_v${{ steps.version.outputs.VERSION }}.apk
