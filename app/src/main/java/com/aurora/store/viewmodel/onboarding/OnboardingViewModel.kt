@@ -31,7 +31,6 @@ import com.aurora.store.util.Preferences.PREFERENCE_AUTO_DELETE
 import com.aurora.store.util.Preferences.PREFERENCE_DEFAULT_SELECTED_TAB
 import com.aurora.store.util.Preferences.PREFERENCE_DISPENSER_URLS
 import com.aurora.store.util.Preferences.PREFERENCE_FILTER_AURORA_ONLY
-import com.aurora.store.util.Preferences.PREFERENCE_FILTER_FDROID
 import com.aurora.store.util.Preferences.PREFERENCE_FOR_YOU
 import com.aurora.store.util.Preferences.PREFERENCE_INSTALLER_ID
 import com.aurora.store.util.Preferences.PREFERENCE_INTRO
@@ -116,7 +115,6 @@ class OnboardingViewModel @Inject constructor(
     private fun Context.saveDefaultPreferences() {
         /*Filters*/
         save(PREFERENCE_FILTER_AURORA_ONLY, false)
-        save(PREFERENCE_FILTER_FDROID, true)
 
         /*Network*/
         save(PREFERENCE_DISPENSER_URLS, FlavouredUtil.defaultDispensers)

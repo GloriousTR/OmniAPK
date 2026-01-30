@@ -35,7 +35,6 @@ import com.aurora.store.data.providers.PermissionProvider.Companion.isGranted
 import com.aurora.store.util.Preferences
 import com.aurora.store.util.Preferences.PREFERENCES_UPDATES_RESTRICTIONS
 import com.aurora.store.util.Preferences.PREFERENCE_FILTER_AURORA_ONLY
-import com.aurora.store.util.Preferences.PREFERENCE_FILTER_FDROID
 import com.aurora.store.util.Preferences.PREFERENCE_UPDATES_AUTO
 import com.aurora.store.util.Preferences.PREFERENCE_UPDATES_CHECK_INTERVAL
 import com.aurora.store.util.Preferences.PREFERENCE_UPDATES_EXTENDED
@@ -109,20 +108,10 @@ class UpdatesPreference : BasePreferenceFragment() {
         handleAutoUpdateDependentPrefs(updatesEnabled)
 
         findPreference<SwitchPreferenceCompat>(PREFERENCE_FILTER_AURORA_ONLY)
-            ?.setOnPreferenceChangeListener { _, newValue ->
-                findPreference<SwitchPreferenceCompat>(PREFERENCE_FILTER_FDROID)?.isEnabled =
-                    !newValue.toString().toBoolean()
+            ?.setOnPreferenceChangeListener { _, _ ->
                 viewModel.updateHelper.checkUpdatesNow()
                 true
             }
-
-        findPreference<SwitchPreferenceCompat>(PREFERENCE_FILTER_FDROID)?.apply {
-            isEnabled = !Preferences.getBoolean(requireContext(), PREFERENCE_FILTER_AURORA_ONLY)
-            setOnPreferenceChangeListener { _, _ ->
-                viewModel.updateHelper.checkUpdatesNow()
-                true
-            }
-        }
 
         findPreference<SwitchPreferenceCompat>(PREFERENCE_UPDATES_EXTENDED)
             ?.setOnPreferenceChangeListener { _, _ ->

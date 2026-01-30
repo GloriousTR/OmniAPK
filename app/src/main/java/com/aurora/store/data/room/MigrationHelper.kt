@@ -34,6 +34,14 @@ object MigrationHelper {
         override fun migrate(db: SupportSQLiteDatabase) = migrateFrom6To7(db)
     }
 
+    val MIGRATION_7_8 = object : Migration(7, 8) {
+        override fun migrate(db: SupportSQLiteDatabase) = migrateFrom7To8(db)
+    }
+
+    val MIGRATION_8_9 = object : Migration(8, 9) {
+        override fun migrate(db: SupportSQLiteDatabase) = migrateFrom8To9(db)
+    }
+
     private const val TAG = "MigrationHelper"
 
     private fun migrateFrom1To2(database: SupportSQLiteDatabase) {
@@ -150,6 +158,55 @@ object MigrationHelper {
             database.setTransactionSuccessful()
         } catch (exception: Exception) {
             Log.e(TAG, "Failed while migrating from database version 6 to 7", exception)
+        } finally {
+            database.endTransaction()
+        }
+    }
+
+    /**
+     * Add fdroid_versions table for F-Droid app versions (intermediate migration).
+     * Note: This table along with fdroid_apps is removed in migration 8_9 as F-Droid support was removed.
+     */
+    private fun migrateFrom7To8(database: SupportSQLiteDatabase) {
+        database.beginTransaction()
+        try {
+            // Create fdroid_versions table with proper schema
+            database.execSQL(
+                """CREATE TABLE IF NOT EXISTS `fdroid_versions` (
+                    `packageName` TEXT NOT NULL,
+                    `versionName` TEXT NOT NULL,
+                    `versionCode` INTEGER NOT NULL,
+                    `size` INTEGER NOT NULL DEFAULT 0,
+                    `downloadUrl` TEXT NOT NULL,
+                    `added` INTEGER NOT NULL DEFAULT 0,
+                    `minSdkVersion` INTEGER NOT NULL DEFAULT 0,
+                    `targetSdkVersion` INTEGER NOT NULL DEFAULT 0,
+                    `hash` TEXT NOT NULL DEFAULT '',
+                    `hashType` TEXT NOT NULL DEFAULT '',
+                    `repoName` TEXT NOT NULL DEFAULT '',
+                    `releaseNotes` TEXT NOT NULL DEFAULT '',
+                    PRIMARY KEY(`packageName`, `versionCode`)
+                )"""
+            )
+            database.setTransactionSuccessful()
+        } catch (exception: Exception) {
+            Log.e(TAG, "Failed while migrating from database version 7 to 8", exception)
+        } finally {
+            database.endTransaction()
+        }
+    }
+
+    /**
+     * Remove F-Droid tables as F-Droid support has been removed from the app.
+     */
+    private fun migrateFrom8To9(database: SupportSQLiteDatabase) {
+        database.beginTransaction()
+        try {
+            database.execSQL("DROP TABLE IF EXISTS `fdroid_apps`")
+            database.execSQL("DROP TABLE IF EXISTS `fdroid_versions`")
+            database.setTransactionSuccessful()
+        } catch (exception: Exception) {
+            Log.e(TAG, "Failed while migrating from database version 8 to 9", exception)
         } finally {
             database.endTransaction()
         }
