@@ -81,10 +81,16 @@ jobs:
         VERSION: ${{ steps.version.outputs.VERSION }}
         BUILD_NUMBER: ${{ github.run_number }}
       run: |
-        VERSION_CODE=$BUILD_NUMBER
+        VERSION_CODE=1
         echo "Updating build.gradle.kts with versionName=$VERSION and versionCode=$VERSION_CODE"
-        sed -i "s/versionCode = 1/versionCode = $VERSION_CODE/g" app/build.gradle.kts
-        sed -i "s/versionName = \"1.0.0\"/versionName = \"$VERSION\"/g" app/build.gradle.kts
+        # Use regex to replace to be safe against current values
+        sed -i "s/versionCode = .*/versionCode = $VERSION_CODE/g" app/build.gradle.kts
+        sed -i "s/versionName = \".*\"/versionName = \"$VERSION\"/g" app/build.gradle.kts
+        
+        # Verify changes
+        echo "Verifying build.gradle.kts changes:"
+        grep "versionCode =" app/build.gradle.kts
+        grep "versionName =" app/build.gradle.kts
 
     - name: Build APK
       env:
@@ -93,25 +99,29 @@ jobs:
         KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
         KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
       run: |
+        set -e
         if [ -n "$KEYSTORE_BASE64" ]; then
           echo "Building RELEASE APK with signing..."
-          # Decode Keystore to project root
           echo "$KEYSTORE_BASE64" | base64 -d > release.keystore
           
-          # Create signing.properties in project root
-          # Note: storeFile in build.gradle.kts is resolved from app/ directory
-          # so we use ../release.keystore to point to project root
           echo "KEY_ALIAS=$KEY_ALIAS" > signing.properties
           echo "KEY_PASSWORD=$KEY_PASSWORD" >> signing.properties
           echo "STORE_FILE=../release.keystore" >> signing.properties
           
-          # Build with --info for detailed output
-          ./gradlew assembleVanillaRelease --info --stacktrace --no-configuration-cache
+          # Capture output to log file while showing it in console
+          ./gradlew assembleVanillaRelease --info --stacktrace --no-configuration-cache | tee buildlog.txt
         else
           echo "Building DEBUG APK (no keystore configured)..."
-          ./gradlew assembleVanillaDebug --info --stacktrace --no-configuration-cache
+          ./gradlew assembleVanillaDebug --info --stacktrace --no-configuration-cache | tee buildlog.txt
         fi
-      
+
+    - name: Upload Build Log
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: gradle-build-log
+        path: buildlog.txt
+
     - name: List Build Outputs
       run: |
         echo "=== Listing all build outputs ==="
@@ -121,6 +131,7 @@ jobs:
       env: 
         VERSION: ${{ steps.version.outputs.VERSION }}
       run: |
+        set -e
         APK_FILE=$(find app/build/outputs -name "*release*.apk" -type f | head -1)
         if [ -z "$APK_FILE" ]; then
           APK_FILE=$(find app/build/outputs -name "*.apk" -type f | head -1)
@@ -136,6 +147,7 @@ jobs:
         fi
 
     - name: Create GitHub Release
+      if: success()
       uses: softprops/action-gh-release@v2
       with:
         tag_name: ${{ steps.version.outputs.TAG }}
@@ -147,6 +159,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Upload APK Artifact
+      if: success()
       uses: actions/upload-artifact@v4
       with:
         name: OmniAPK_v${{ steps.version.outputs.VERSION }}
