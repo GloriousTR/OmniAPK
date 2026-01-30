@@ -32,6 +32,12 @@
   <string name="alternative_installing">Installing…</string>
   <string name="alternative_install_success">Installation started</string>
   <string name="alternative_install_error">Installation failed: %s</string>
+  <string name="webview_download_error">Download Error</string>
+  <string name="webview_install_failed">Installation Failed</string>
+  <string name="action_refresh">Refresh</string>
+  <string name="action_retry">Retry</string>
+  <string name="browse_apkmirror">Browse APKMirror</string>
+  <string name="browse_apkpure">Browse APKPure</string>
   <string name="details_website">Website</string>
   <string name="details_source_code">Source</string>
   <string name="details_version">Version</string>

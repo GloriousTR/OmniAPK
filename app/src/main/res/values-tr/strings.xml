@@ -1,5 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+    <!-- Alternatif İndirme Stringleri -->
+    <string name="download_via_apkmirror">APKMirror\'dan İndir</string>
+    <string name="download_via_apkpure">APKPure\'dan İndir</string>
+    <string name="browse_apkmirror">APKMirror\'a Göz At</string>
+    <string name="browse_apkpure">APKPure\'a Göz At</string>
+    <string name="alternative_loading_versions">Versiyonlar yükleniyor…</string>
+    <string name="alternative_no_versions">Versiyon bulunamadı</string>
+    <string name="alternative_select_version">İndirmek için bir versiyon seçin:</string>
+    <string name="alternative_downloading">İndiriliyor…</string>
+    <string name="alternative_download_complete">İndirme tamamlandı! Kuruluyor…</string>
+    <string name="alternative_installing">Kuruluyor…</string>
+    <string name="alternative_install_success">Kurulum başladı</string>
+    <string name="alternative_install_error">Kurulum başarısız: %s</string>
+    <string name="webview_download_error">İndirme Hatası</string>
+    <string name="webview_install_failed">Kurulum Başarısız</string>
+    <string name="action_refresh">Yenile</string>
+    <string name="action_retry">Tekrar Dene</string>
+
     <string name="details_dev_email">E-posta</string>
     <string name="about_bitcoin_bch">Bitcoin Cash</string>
     <string name="about_bhim">BHIM - UPI</string>
