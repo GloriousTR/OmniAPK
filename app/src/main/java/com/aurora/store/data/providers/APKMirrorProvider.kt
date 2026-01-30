@@ -27,12 +27,12 @@ class APKMirrorProvider @Inject constructor(
         private const val TIMEOUT = 20000
     }
     
-    // Rotate between different user agents to avoid bot detection
+    // Modern browser user agents for better compatibility
     private val userAgents = listOf(
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:123.0) Gecko/20100101 Firefox/123.0"
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:133.0) Gecko/20100101 Firefox/133.0"
     )
     
     private fun getRandomUserAgent(): String = userAgents.random()
@@ -198,7 +198,7 @@ class APKMirrorProvider @Inject constructor(
                         .replace("XAPK", "")
                         .trim()
                     
-                    if (versionName.isNotEmpty() && href.isNotEmpty() && !href.contains("javascript")) {
+                    if (versionName.isNotEmpty() && href.isNotEmpty() && !href.contains("javascript", ignoreCase = true)) {
                         val fullUrl = if (href.startsWith("http")) href else "$BASE_URL$href"
                         
                         versions.add(
@@ -255,7 +255,7 @@ class APKMirrorProvider @Inject constructor(
             
             try {
                 val versionsDoc = createConnection(versionsPageUrl).get()
-                var versions = parseVersionsFromDocument(versionsDoc, packageName)
+                val versions = parseVersionsFromDocument(versionsDoc, packageName)
                 
                 if (versions.isNotEmpty()) {
                     Log.d(TAG, "Found ${versions.size} versions from versions page for $packageName")
@@ -313,7 +313,7 @@ class APKMirrorProvider @Inject constructor(
                 
                 for (variantRow in variantRows) {
                     val variantHref = variantRow.select("a.accent_color, a[href*=variant], a").attr("href")
-                    if (variantHref.isNotEmpty() && !variantHref.contains("javascript")) {
+                    if (variantHref.isNotEmpty() && !variantHref.contains("javascript", ignoreCase = true)) {
                         Log.d(TAG, "Following variant link: $variantHref")
                         val variantUrl = if (variantHref.startsWith("http")) variantHref else "$BASE_URL$variantHref"
                         doc = createConnection(variantUrl).get()

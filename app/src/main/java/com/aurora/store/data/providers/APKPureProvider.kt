@@ -30,12 +30,12 @@ class APKPureProvider @Inject constructor(
         const val SOURCE_NAME = "APKPure"
     }
     
-    // Rotate between different user agents to avoid bot detection
+    // Modern browser user agents for better compatibility
     private val userAgents = listOf(
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:123.0) Gecko/20100101 Firefox/123.0"
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:133.0) Gecko/20100101 Firefox/133.0"
     )
     
     private fun getRandomUserAgent(): String = userAgents.random()
@@ -257,7 +257,7 @@ class APKPureProvider @Inject constructor(
                             href.split("/").lastOrNull { it.matches(Regex(".*\\d+\\.\\d+.*")) } ?: ""
                         }
                     
-                    if (href.isNotEmpty() && finalVersionName.isNotEmpty() && !href.contains("javascript")) {
+                    if (href.isNotEmpty() && finalVersionName.isNotEmpty() && !href.contains("javascript", ignoreCase = true)) {
                         val fullUrl = if (href.startsWith("http")) href else "$BASE_URL$href"
                         
                         versions.add(
@@ -282,12 +282,18 @@ class APKPureProvider @Inject constructor(
 
     /**
      * Get download URL for a specific version (deprecated - use getDownloadUrlFromPage)
+     * @deprecated Use getDownloadUrlFromPage(version.downloadPageUrl) instead.
+     * The downloadPageUrl is available in AppVersion objects returned by getAppVersions().
      */
-    @Deprecated("Use getDownloadUrlFromPage instead", ReplaceWith("getDownloadUrlFromPage(pageUrl)"))
+    @Deprecated(
+        message = "Use getDownloadUrlFromPage(version.downloadPageUrl) instead. " +
+                  "The downloadPageUrl is available in AppVersion objects returned by getAppVersions().",
+        replaceWith = ReplaceWith("getDownloadUrlFromPage(version.downloadPageUrl)")
+    )
     suspend fun getDownloadUrl(packageName: String, versionName: String): String? = withContext(Dispatchers.IO) {
         // This method is kept for compatibility but returns null
-        // The ViewModel should use getDownloadUrlFromPage with the downloadPageUrl
-        Log.w(TAG, "getDownloadUrl called with packageName=$packageName, versionName=$versionName - this method is deprecated")
+        // The ViewModel should use getDownloadUrlFromPage with the downloadPageUrl from AppVersion
+        Log.w(TAG, "Deprecated getDownloadUrl called - use getDownloadUrlFromPage(version.downloadPageUrl) instead")
         null
     }
     
@@ -328,7 +334,7 @@ class APKPureProvider @Inject constructor(
             
             // If direct link not found, try to find a download page link and follow it
             val downloadPageLink = doc.select("a[href*=download]").attr("href")
-            if (downloadPageLink.isNotEmpty() && !downloadPageLink.contains("javascript")) {
+            if (downloadPageLink.isNotEmpty() && !downloadPageLink.contains("javascript", ignoreCase = true)) {
                 val downloadPageUrl = if (downloadPageLink.startsWith("http")) downloadPageLink else "$BASE_URL$downloadPageLink"
                 Log.d(TAG, "Following download page: $downloadPageUrl")
                 
