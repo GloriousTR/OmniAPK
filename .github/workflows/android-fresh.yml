@@ -37,7 +37,8 @@ jobs:
         git fetch --tags --force
         
         # Find all tags in new format (v*-*)
-        LATEST_TAG=$(git tag -l "v*-*" | grep -E "^v[0-9]+-[0-9]+$" | sort -t'-' -k1.2n -k2n | tail -n 1)
+        # Only accept vX-Y where X is any digit(s) and Y is single digit (0-9)
+        LATEST_TAG=$(git tag -l "v*-*" | grep -E "^v[0-9]+-[0-9]$" | sort -t'-' -k1.2n -k2n | tail -n 1)
         
         if [ -z "$LATEST_TAG" ]; then
            echo "No existing vX-Y tags found. Starting fresh at 1.0"
