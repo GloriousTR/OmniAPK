@@ -29,6 +29,7 @@
     <action android:id="@+id/action_global_moreDialogFragment" app:destination="@id/moreDialogFragment" />
     <fragment android:id="@+id/appsContainerFragment" android:name="com.aurora.store.view.ui.apps.AppsContainerFragment" android:label="@string/title_apps" tools:layout="@layout/fragment_apps_games" />
     <fragment android:id="@+id/gamesContainerFragment" android:name="com.aurora.store.view.ui.games.GamesContainerFragment" android:label="@string/title_games" tools:layout="@layout/fragment_apps_games" />
+    <fragment android:id="@+id/webToAppFragment" android:name="com.aurora.store.view.ui.webtoapp.WebToAppFragment" android:label="@string/title_webtoapp" />
     <fragment android:id="@+id/updatesFragment" android:name="com.aurora.store.view.ui.updates.UpdatesFragment" android:label="@string/title_updates" tools:layout="@layout/fragment_updates" />
     <fragment android:id="@+id/settingsFragment" android:name="com.aurora.store.view.ui.preferences.SettingsFragment" android:label="@string/title_settings" tools:layout="@layout/fragment_setting" />
     <fragment android:id="@+id/installationPreference" android:name="com.aurora.store.view.ui.preferences.installation.InstallationPreference" android:label="InstallationPreference" tools:layout="@layout/fragment_setting" />

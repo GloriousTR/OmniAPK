@@ -68,7 +68,7 @@ import com.aurora.store.viewmodel.webtoapp.WebToAppViewModel
 
 @Composable
 fun WebToAppScreen(
-    onNavigateUp: () -> Unit,
+    onNavigateUp: (() -> Unit)? = null,
     viewModel: WebToAppViewModel = hiltViewModel()
 ) {
     val buildState by viewModel.buildState.collectAsStateWithLifecycle()
@@ -121,7 +121,7 @@ private fun ScreenContent(
     isFormValid: Boolean = false,
     onBuildClick: () -> Unit = {},
     onResetBuildState: () -> Unit = {},
-    onNavigateUp: () -> Unit = {}
+    onNavigateUp: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
 
