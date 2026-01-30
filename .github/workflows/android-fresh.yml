@@ -30,7 +30,7 @@ jobs:
       id: version
       shell: bash
       run: |
-        # Versioning: 1.0 -> 1.9, then 2.0 -> 2.9, then 3.0, etc.
+        # Versioning: major increments when minor reaches 9 (e.g., 1.0-1.9, then 2.0-2.9, etc.)
         git fetch --tags --force
         
         # Find latest tag matching vX.Y pattern
