@@ -24,10 +24,10 @@
 
 ## ✨ Key Features
 
-### 🛒 Multi-Source App Store
+### 🛒 Google Play Alternative
 
 - **Google Play Access**: Download apps from Google Play with anonymous or personal account login
-- **Alternative Sources**: Direct APKMirror and APKPure integration for hard-to-find apps
+- **Alternative Downloads**: APKMirror and APKPure options for apps in your Play Store results
 - **XAPK Support**: Install split APKs and expansion files seamlessly
 
 ### 🌐 WebToApp Engine
@@ -45,10 +45,10 @@ Transform any website into a standalone Android app with powerful customization:
 
 ### 📥 Alternative Downloads
 
-When an app is unavailable on Play Store, OmniAPK provides:
+For apps in your Play Store search results, OmniAPK provides alternative download options:
 
-- **APKMirror Browser**: In-app WebView with 600+ pre-mapped popular apps
-- **APKPure Browser**: Alternative source for regional apps
+- **APKMirror**: In-app browser with 600+ pre-mapped popular apps for quick access
+- **APKPure**: Alternative source when Play Store download fails
 
 ### 🔧 Advanced Features
 
@@ -98,10 +98,9 @@ cd OmniAPK
 ./gradlew assembleVanillaRelease
 ```
 
-### Build Variants
+### Build Variant
 
 - `vanillaRelease` - Standard release build
-- `huaweiRelease` - Huawei AppGallery compatible build
 
 ## ⚠️ Limitations
 
