@@ -1,0 +1,89 @@
+name: Cleanup All Tags
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_cleanup:
+        description: 'Tüm tag ve release işlemlerini silmek için "DELETE" yazın'
+        required: true
+        default: ''
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Validate Confirmation
+      if: github.event.inputs.confirm_cleanup != 'DELETE'
+      run: |
+        echo "❌ Hata: Silme işlemini onaylamak için 'DELETE' yazmanız gerekiyor."
+        echo "Girilen değer: '${{ github.event.inputs.confirm_cleanup }}'"
+        exit 1
+
+    - name: Delete All Releases
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        echo "🗑️ Tüm release'ler siliniyor..."
+        
+        # Get all release IDs and delete them
+        RELEASES=$(gh release list --limit 100 --json tagName -q '.[].tagName' 2>/dev/null || echo "")
+        
+        if [ -z "$RELEASES" ]; then
+          echo "📝 Silinecek release bulunamadı."
+        else
+          echo "Bulunan release'ler:"
+          echo "$RELEASES"
+          echo ""
+          
+          for TAG in $RELEASES; do
+            echo "Siliniyor: $TAG"
+            gh release delete "$TAG" --yes --cleanup-tag 2>/dev/null || echo "  ⚠️ $TAG silinemedi (zaten silinmiş olabilir)"
+          done
+          
+          echo "✅ Tüm release'ler silindi."
+        fi
+
+    - name: Delete All Remote Tags
+      run: |
+        echo "🗑️ Tüm uzak tag'ler siliniyor..."
+        
+        git fetch --tags --force
+        
+        # Get all tags
+        TAGS=$(git tag -l)
+        
+        if [ -z "$TAGS" ]; then
+          echo "📝 Silinecek tag bulunamadı."
+        else
+          echo "Bulunan tag'ler:"
+          echo "$TAGS"
+          echo ""
+          
+          # Delete each tag from remote
+          for TAG in $TAGS; do
+            echo "Uzaktan siliniyor: $TAG"
+            git push origin --delete "refs/tags/$TAG" 2>/dev/null || echo "  ⚠️ $TAG silinemedi (zaten silinmiş olabilir)"
+          done
+          
+          echo "✅ Tüm uzak tag'ler silindi."
+        fi
+
+    - name: Summary
+      run: |
+        echo ""
+        echo "================================================"
+        echo "✅ TEMİZLİK TAMAMLANDI"
+        echo "================================================"
+        echo ""
+        echo "Tüm tag'ler ve release'ler başarıyla silindi."
+        echo "Artık 'Build Android APK (Fresh)' workflow'u"
+        echo "v1-0'dan temiz bir başlangıç yapacak."
+        echo ""
