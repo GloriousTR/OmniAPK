@@ -429,6 +429,11 @@ class MoreDialogFragment : DialogFragment() {
             screen = Screen.Installed
         ),
         ComposeOption(
+            title = R.string.title_webtoapp,
+            icon = R.drawable.ic_webtoapp,
+            screen = Screen.WebToApp
+        ),
+        ComposeOption(
             title = R.string.title_blacklist_manager,
             icon = R.drawable.ic_blacklist,
             screen = Screen.Blacklist

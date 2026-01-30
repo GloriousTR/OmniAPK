@@ -597,4 +597,33 @@
   <string name="loading">Loading in progress</string>
   <string name="page">Page <xliff:g id="number">%1$d</xliff:g>
   </string>
+
+  <!-- WebToApp Feature -->
+  <string name="title_webtoapp">WebToApp</string>
+  <string name="webtoapp_header_title">Transform Websites into Apps</string>
+  <string name="webtoapp_header_description">Create standalone Android apps from any website in seconds. No coding required!</string>
+  <string name="webtoapp_app_icon">App Icon</string>
+  <string name="webtoapp_tap_to_select_icon">Tap to select an icon</string>
+  <string name="webtoapp_app_details">App Details</string>
+  <string name="webtoapp_app_name">App Name</string>
+  <string name="webtoapp_app_name_hint">Enter app name</string>
+  <string name="webtoapp_website_url">Website URL</string>
+  <string name="webtoapp_website_url_hint">https://example.com</string>
+  <string name="webtoapp_settings">Settings</string>
+  <string name="webtoapp_enable_javascript">Enable JavaScript</string>
+  <string name="webtoapp_enable_javascript_desc">Allow JavaScript execution in web pages</string>
+  <string name="webtoapp_enable_adblock">Enable Ad Blocking</string>
+  <string name="webtoapp_enable_adblock_desc">Block ads and popups in web pages</string>
+  <string name="webtoapp_enable_desktop_mode">Desktop Mode</string>
+  <string name="webtoapp_enable_desktop_mode_desc">Request desktop version of websites</string>
+  <string name="webtoapp_enable_dark_mode">Force Dark Mode</string>
+  <string name="webtoapp_enable_dark_mode_desc">Apply dark theme to web pages</string>
+  <string name="webtoapp_enable_fullscreen">Fullscreen Mode</string>
+  <string name="webtoapp_enable_fullscreen_desc">Hide status bar and navigation</string>
+  <string name="webtoapp_create_app">Create App</string>
+  <string name="webtoapp_preparing">Preparing…</string>
+  <string name="webtoapp_building">Building your app…</string>
+  <string name="webtoapp_success">App Created Successfully!</string>
+  <string name="webtoapp_success_description">Your web app has been created and saved.</string>
+  <string name="webtoapp_error">Build Failed</string>
 </resources>
