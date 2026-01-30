@@ -242,13 +242,13 @@ fun WebViewDownloadDialog(
     val scope = rememberCoroutineScope()
     
     // Build the initial URL based on source
-    // APKMirror: Uses direct app page URL format for faster navigation
-    // APKPure: Uses direct app page URL format for faster navigation
+    // APKPure: Supports direct app page via /app/{packageName} format
+    // APKMirror: Does not support direct package lookup, uses optimized search
     val initialUrl = remember(source, packageName) {
         when (source) {
-            "APKMirror" -> "https://www.apkmirror.com/apk/?q=${packageName}"
-            "APKPure" -> "https://apkpure.com/${packageName}"
-            else -> "https://www.apkmirror.com/apk/?q=${packageName}"
+            "APKMirror" -> "https://www.apkmirror.com/?post_type=app_release&searchtype=app&s=${packageName}"
+            "APKPure" -> "https://apkpure.com/app/${packageName}"
+            else -> "https://www.apkmirror.com/?post_type=app_release&searchtype=app&s=${packageName}"
         }
     }
     
