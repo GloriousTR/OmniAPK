@@ -32,6 +32,7 @@ import com.aurora.store.compose.ui.onboarding.OnboardingScreen
 import com.aurora.store.compose.ui.preferences.installation.InstallerScreen
 import com.aurora.store.compose.ui.search.SearchScreen
 import com.aurora.store.compose.ui.spoof.SpoofScreen
+import com.aurora.store.compose.ui.webtoapp.WebToAppScreen
 
 /**
  * Navigation display for compose screens
@@ -154,6 +155,10 @@ fun NavDisplay(startDestination: NavKey) {
                         backstack.add(Screen.AppDetails(packageName))
                     }
                 )
+            }
+
+            entry<Screen.WebToApp> {
+                WebToAppScreen(onNavigateUp = ::onNavigateUp)
             }
         }
     )

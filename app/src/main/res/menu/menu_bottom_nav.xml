@@ -23,6 +23,8 @@
 
     <item android:id="@id/gamesContainerFragment" android:icon="@drawable/ic_games" android:title="@string/title_games" />
 
+    <item android:id="@id/webToAppFragment" android:icon="@drawable/ic_webtoapp" android:title="@string/title_webtoapp" />
+
     <item android:id="@id/updatesFragment" android:icon="@drawable/ic_updates" android:title="@string/title_updates" />
 
 </menu>
