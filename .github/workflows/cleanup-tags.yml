@@ -34,7 +34,8 @@ jobs:
         echo "🗑️ Tüm release'ler siliniyor..."
         
         # Get all release IDs and delete them
-        RELEASES=$(gh release list --limit 100 --json tagName -q '.[].tagName' 2>/dev/null || echo "")
+        # Get all releases (limit 1000 should cover most cases)
+        RELEASES=$(gh release list --limit 1000 --json tagName -q '.[].tagName' 2>/dev/null || echo "")
         
         if [ -z "$RELEASES" ]; then
           echo "📝 Silinecek release bulunamadı."
@@ -45,7 +46,8 @@ jobs:
           
           for TAG in $RELEASES; do
             echo "Siliniyor: $TAG"
-            gh release delete "$TAG" --yes --cleanup-tag 2>/dev/null || echo "  ⚠️ $TAG silinemedi (zaten silinmiş olabilir)"
+            # --cleanup-tag kullanmıyoruz, tag silme işlemi ayrı adımda yapılacak
+            gh release delete "$TAG" --yes 2>/dev/null || echo "  ⚠️ $TAG silinemedi (zaten silinmiş olabilir)"
           done
           
           echo "✅ Tüm release'ler silindi."
@@ -83,7 +85,20 @@ jobs:
         echo "✅ TEMİZLİK TAMAMLANDI"
         echo "================================================"
         echo ""
-        echo "Tüm tag'ler ve release'ler başarıyla silindi."
+        
+        # Doğrulama: Kalan tag'leri kontrol et
+        git fetch --tags --force
+        REMAINING_TAGS=$(git tag -l | wc -l)
+        
+        if [ "$REMAINING_TAGS" -eq 0 ]; then
+          echo "✅ Tüm tag'ler başarıyla silindi."
+        else
+          echo "⚠️ Kalan tag sayısı: $REMAINING_TAGS"
+          echo "Kalan tag'ler:"
+          git tag -l
+        fi
+        
+        echo ""
         echo "Artık 'Build Android APK (Fresh)' workflow'u"
         echo "v1-0'dan temiz bir başlangıç yapacak."
         echo ""
