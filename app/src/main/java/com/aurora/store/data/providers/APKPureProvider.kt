@@ -62,6 +62,7 @@ class APKPureProvider @Inject constructor(
 
     /**
      * Search for apps on APKPure
+     * Selectors based on https://github.com/kiber-io/apkd
      */
     suspend fun searchApps(query: String): List<AppInfo> = withContext(Dispatchers.IO) {
         try {
@@ -72,69 +73,98 @@ class APKPureProvider @Inject constructor(
 
             val results = mutableListOf<AppInfo>()
             
-            // APKPure search results - try multiple selectors for different page versions
-            val items = doc.select("div.list-wrap div.list-item").ifEmpty {
-                doc.select(".search-res li dl, .first").ifEmpty {
-                    doc.select("div.apk-item, .apk-list-item").ifEmpty {
-                        doc.select("a.apk-card").ifEmpty {
-                            doc.select("[class*=search] [class*=item]")
-                        }
-                    }
+            // From apkd: Primary selector is div.first with data-dt-app attribute
+            val firstResult = doc.select("div.first").first()
+            if (firstResult != null) {
+                val dataDtApp = firstResult.attr("data-dt-app")
+                val link = firstResult.select("a.first-info").first()
+                
+                if (dataDtApp.isNotEmpty() && link != null) {
+                    val href = link.attr("href")
+                    val name = link.attr("title").ifEmpty { link.text().trim() }
+                    val icon = firstResult.select("img").first()
+                    val iconUrl = icon?.let { img ->
+                        val src = img.attr("data-src").ifEmpty { img.attr("src") }
+                        if (src.startsWith("//")) "https:$src" else src
+                    } ?: ""
+                    
+                    results.add(
+                        AppInfo(
+                            packageName = dataDtApp, // Use data-dt-app as package name
+                            name = name,
+                            versionName = "",
+                            versionCode = 0,
+                            iconUrl = iconUrl,
+                            source = "APKPure",
+                            downloadUrl = if (href.startsWith("http")) href else "$BASE_URL$href"
+                        )
+                    )
                 }
             }
             
-            Log.d(TAG, "Found ${items.size} items in search results")
-
-            items.take(20).forEach { item ->
-                try {
-                    // Try multiple selectors for the link element
-                    val link = item.select("a.first-info, a.dd").first()
-                        ?: item.select("a.title-link").first()
-                        ?: item.select("a[href*=\\/]").first()
-                        ?: item.select("a").first()
-                    
-                    val icon = item.select("img.lazyload").first()
-                        ?: item.select("img[data-src]").first()
-                        ?: item.select("img").first()
-                    
-                    // Try multiple title selectors
-                    val title = item.select(".p1").text().ifEmpty {
-                        item.select(".title").text().ifEmpty {
-                            item.select("h3").text().ifEmpty {
-                                link?.attr("title") ?: ""
+            // Fallback: Try other selectors for different page versions
+            if (results.isEmpty()) {
+                val items = doc.select("div.list-wrap div.list-item").ifEmpty {
+                    doc.select(".search-res li dl").ifEmpty {
+                        doc.select("div.apk-item, .apk-list-item").ifEmpty {
+                            doc.select("a.apk-card").ifEmpty {
+                                doc.select("[class*=search] [class*=item]")
                             }
                         }
                     }
-                    
-                    if (link != null) {
-                        val href = link.attr("href")
-                        val iconUrl = icon?.let { img ->
-                            val src = img.attr("data-src").ifEmpty { img.attr("src") }
-                            if (src.startsWith("//")) "https:$src" else src
-                        } ?: ""
-                        val name = title.ifEmpty { link.text().trim() }
+                }
+                
+                Log.d(TAG, "Found ${items.size} items in search results (fallback)")
+
+                items.take(20).forEach { item ->
+                    try {
+                        val link = item.select("a.first-info, a.dd").first()
+                            ?: item.select("a.title-link").first()
+                            ?: item.select("a[href*=\\/]").first()
+                            ?: item.select("a").first()
                         
-                        // URL format: /app-name/package.name
-                        val packageName = href.substringAfterLast("/").ifEmpty {
-                            href.split("/").lastOrNull { it.contains(".") } ?: href.substringAfterLast("/")
+                        val icon = item.select("img.lazyload").first()
+                            ?: item.select("img[data-src]").first()
+                            ?: item.select("img").first()
+                        
+                        val title = item.select(".p1").text().ifEmpty {
+                            item.select(".title").text().ifEmpty {
+                                item.select("h3").text().ifEmpty {
+                                    link?.attr("title") ?: ""
+                                }
+                            }
                         }
                         
-                        if (name.isNotEmpty() && href.isNotEmpty()) {
-                            results.add(
-                                AppInfo(
-                                    packageName = packageName,
-                                    name = name,
-                                    versionName = "",
-                                    versionCode = 0,
-                                    iconUrl = iconUrl,
-                                    source = "APKPure",
-                                    downloadUrl = if (href.startsWith("http")) href else "$BASE_URL$href"
+                        if (link != null) {
+                            val href = link.attr("href")
+                            val iconUrl = icon?.let { img ->
+                                val src = img.attr("data-src").ifEmpty { img.attr("src") }
+                                if (src.startsWith("//")) "https:$src" else src
+                            } ?: ""
+                            val name = title.ifEmpty { link.text().trim() }
+                            
+                            // URL format: /app-name/package.name
+                            val packageName = href.substringAfterLast("/").ifEmpty {
+                                href.split("/").lastOrNull { it.contains(".") } ?: href.substringAfterLast("/")
+                            }
+                            
+                            if (name.isNotEmpty() && href.isNotEmpty()) {
+                                results.add(
+                                    AppInfo(
+                                        packageName = packageName,
+                                        name = name,
+                                        versionName = "",
+                                        versionCode = 0,
+                                        iconUrl = iconUrl,
+                                        source = "APKPure",
+                                        downloadUrl = if (href.startsWith("http")) href else "$BASE_URL$href"
+                                    )
                                 )
-                            )
+                            }
                         }
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Error parsing search item: ${e.message}")
                     }
-                } catch (e: Exception) {
-                    Log.w(TAG, "Error parsing search item: ${e.message}")
                 }
             }
             
@@ -197,87 +227,145 @@ class APKPureProvider @Inject constructor(
     
     /**
      * Parse versions from a document using multiple selector strategies
+     * Selectors based on https://github.com/kiber-io/apkd
      */
     private fun parseVersionsFromDocument(doc: Document, packageName: String): List<AppVersion> {
         val versions = mutableListOf<AppVersion>()
         
-        // Try multiple selectors for versions list - APKPure structure varies
-        val listItems = doc.select("ul.ver-wrap li").ifEmpty {
-            doc.select(".ver-item").ifEmpty {
-                doc.select("div.ver").ifEmpty {
-                    doc.select("div.version-item").ifEmpty {
-                        doc.select("a[href*=download]").ifEmpty {
-                            // Try finding version rows by common patterns
-                            doc.select("div[class*=version], li[class*=version]").ifEmpty {
-                                doc.select(".apk-info-wrap")
+        // From apkd: Primary selector is a.ver_download_link with data attributes
+        val verDownloadLinks = doc.select("a.ver_download_link")
+        
+        if (verDownloadLinks.isNotEmpty()) {
+            Log.d(TAG, "Found ${verDownloadLinks.size} ver_download_link items for $packageName")
+            
+            verDownloadLinks.take(30).forEach { link ->
+                try {
+                    val apkId = link.attr("data-dt-apkid")
+                    // Only process APK files (not XAPK/bundles for now)
+                    if (apkId.startsWith("b/APK")) {
+                        val versionName = link.attr("data-dt-version")
+                        val versionCodeStr = link.attr("data-dt-versioncode")
+                        val fileSizeStr = link.attr("data-dt-filesize")
+                        
+                        // Get update date from span.update-on
+                        val updateDateElement = link.select("span.update-on").first()
+                        val updateDate = updateDateElement?.text()?.trim() ?: ""
+                        
+                        val versionCode = versionCodeStr.toIntOrNull() ?: 0
+                        val fileSize = fileSizeStr.toLongOrNull() ?: 0L
+                        val fileSizeStr2 = if (fileSize > 0) formatFileSize(fileSize) else ""
+                        
+                        // From apkd: Direct download URL pattern
+                        // https://d.apkpure.com/b/APK/{pkg}?versionCode={version_code}
+                        val directDownloadUrl = "https://d.apkpure.com/b/APK/$packageName?versionCode=$versionCode"
+                        
+                        if (versionName.isNotEmpty()) {
+                            versions.add(
+                                AppVersion(
+                                    packageName = packageName,
+                                    versionName = versionName,
+                                    versionCode = versionCode,
+                                    downloadPageUrl = directDownloadUrl, // Use direct download URL!
+                                    downloadUrl = directDownloadUrl,
+                                    source = "APKPure",
+                                    size = fileSizeStr2,
+                                    uploadDate = updateDate
+                                )
+                            )
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.w(TAG, "Error parsing ver_download_link: ${e.message}")
+                }
+            }
+        }
+        
+        // Fallback to other selectors if primary didn't work
+        if (versions.isEmpty()) {
+            val listItems = doc.select("ul.ver-wrap li").ifEmpty {
+                doc.select(".ver-item").ifEmpty {
+                    doc.select("div.ver").ifEmpty {
+                        doc.select("div.version-item").ifEmpty {
+                            doc.select("a[href*=download]").ifEmpty {
+                                doc.select("div[class*=version], li[class*=version]").ifEmpty {
+                                    doc.select(".apk-info-wrap")
+                                }
                             }
                         }
                     }
                 }
             }
-        }
-        
-        Log.d(TAG, "Found ${listItems.size} version items for $packageName")
+            
+            Log.d(TAG, "Found ${listItems.size} version items (fallback) for $packageName")
 
-        listItems.take(30).forEach { item ->
-            try {
-                val link = item.select("a[href]").first()
-                
-                // Try multiple version name selectors
-                val verName = item.select(".ver-item-n").text().ifEmpty {
-                    item.select(".ver-info-top").text().ifEmpty {
-                        item.select(".version").text().ifEmpty {
-                            item.select("span[class*=ver]").text().ifEmpty {
-                                link?.text() ?: ""
+            listItems.take(30).forEach { item ->
+                try {
+                    val link = item.select("a[href]").first()
+                    
+                    val verName = item.select(".ver-item-n").text().ifEmpty {
+                        item.select(".ver-info-top").text().ifEmpty {
+                            item.select(".version").text().ifEmpty {
+                                item.select("span[class*=ver]").text().ifEmpty {
+                                    link?.text() ?: ""
+                                }
                             }
                         }
                     }
-                }
-                
-                // Try multiple size selectors
-                val verInfo = item.select(".ver-item-s").text().ifEmpty {
-                    item.select(".ver-info-m").text().ifEmpty {
-                        item.select(".size").text().ifEmpty {
-                            item.select("span[class*=size]").text()
+                    
+                    val verInfo = item.select(".ver-item-s").text().ifEmpty {
+                        item.select(".ver-info-m").text().ifEmpty {
+                            item.select(".size").text().ifEmpty {
+                                item.select("span[class*=size]").text()
+                            }
                         }
                     }
-                }
-                
-                if (link != null) {
-                    val href = link.attr("href")
                     
-                    // Extract version name
-                    val finalVersionName = verName
-                        .replace("Download", "")
-                        .replace("APK", "")
-                        .replace("XAPK", "")
-                        .trim()
-                        .ifEmpty { 
-                            // Try to extract version from href
-                            href.split("/").lastOrNull { it.matches(Regex(".*\\d+\\.\\d+.*")) } ?: ""
-                        }
-                    
-                    if (href.isNotEmpty() && finalVersionName.isNotEmpty() && !href.contains("javascript", ignoreCase = true)) {
-                        val fullUrl = if (href.startsWith("http")) href else "$BASE_URL$href"
+                    if (link != null) {
+                        val href = link.attr("href")
                         
-                        versions.add(
-                            AppVersion(
-                                packageName = packageName,
-                                versionName = finalVersionName,
-                                versionCode = 0,
-                                downloadPageUrl = fullUrl,
-                                source = "APKPure",
-                                size = verInfo
+                        val finalVersionName = verName
+                            .replace("Download", "")
+                            .replace("APK", "")
+                            .replace("XAPK", "")
+                            .trim()
+                            .ifEmpty { 
+                                href.split("/").lastOrNull { it.matches(Regex(".*\\d+\\.\\d+.*")) } ?: ""
+                            }
+                        
+                        if (href.isNotEmpty() && finalVersionName.isNotEmpty() && !href.contains("javascript", ignoreCase = true)) {
+                            val fullUrl = if (href.startsWith("http")) href else "$BASE_URL$href"
+                            
+                            versions.add(
+                                AppVersion(
+                                    packageName = packageName,
+                                    versionName = finalVersionName,
+                                    versionCode = 0,
+                                    downloadPageUrl = fullUrl,
+                                    source = "APKPure",
+                                    size = verInfo
+                                )
                             )
-                        )
+                        }
                     }
+                } catch (e: Exception) {
+                    Log.w(TAG, "Error parsing version item: ${e.message}")
                 }
-            } catch (e: Exception) {
-                Log.w(TAG, "Error parsing version item: ${e.message}")
             }
         }
         
         return versions
+    }
+    
+    /**
+     * Format file size from bytes to human readable format
+     */
+    private fun formatFileSize(bytes: Long): String {
+        return when {
+            bytes >= 1_000_000_000 -> String.format("%.2f GB", bytes / 1_000_000_000.0)
+            bytes >= 1_000_000 -> String.format("%.2f MB", bytes / 1_000_000.0)
+            bytes >= 1_000 -> String.format("%.2f KB", bytes / 1_000.0)
+            else -> "$bytes B"
+        }
     }
 
     /**
@@ -299,22 +387,28 @@ class APKPureProvider @Inject constructor(
     
     /**
      * Get download URL from the version page
-     * Navigates through APKPure's download process to get the actual APK URL
+     * If the URL is already a direct download URL (d.apkpure.com), returns it directly.
+     * Otherwise navigates through APKPure's download process to get the actual APK URL.
      */
     suspend fun getDownloadUrlFromPage(pageUrl: String): String? = withContext(Dispatchers.IO) {
         try {
             Log.d(TAG, "Getting download URL from: $pageUrl")
             
+            // From apkd: Direct download URLs use d.apkpure.com domain
+            // If URL is already a direct download URL, return it
+            if (pageUrl.contains("d.apkpure.com") || pageUrl.contains("download.apkpure.com")) {
+                Log.d(TAG, "URL is already a direct download URL: $pageUrl")
+                return@withContext pageUrl
+            }
+            
             val doc = createConnection(pageUrl).get()
             
             // Try multiple selectors for the download button/link
-            // APKPure uses various structures for download buttons
             val downloadLink = doc.select("#download_link").attr("href").ifEmpty {
                 doc.select("a.download-start-btn").attr("href").ifEmpty {
                     doc.select("a.da[href]").attr("href").ifEmpty {
                         doc.select("a.btn-download[href]").attr("href").ifEmpty {
                             doc.select("a[href*=download][class*=btn]").attr("href").ifEmpty {
-                                // Try to find any download link
                                 doc.select("a[href*=.apk], a[href*=.xapk]").attr("href").ifEmpty {
                                     doc.select("a[data-dt-apkid]").attr("href")
                                 }
