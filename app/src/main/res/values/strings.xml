@@ -250,6 +250,8 @@
   <string name="pref_updates_incompatible_desc">Display updates for incompatible or disabled apps that may fail to install</string>
   <string name="pref_aurora_only">Filter apps from other sources</string>
   <string name="pref_aurora_only_desc">Don\'t check for updates for apps installed from sources outside Aurora Store</string>
+  <string name="pref_filter_fdroid_title">Filter F-Droid apps</string>
+  <string name="pref_filter_fdroid_summary">Remove F-Droid apps from the list</string>
   <string name="purchase_failed">"Download failed"</string>
   <string name="purchase_invalid">"App not purchased"</string>
   <string name="purchase_unsupported">"App not supported"</string>
