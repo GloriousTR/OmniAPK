@@ -601,7 +601,10 @@
   <!-- WebToApp Feature -->
   <string name="title_webtoapp">WebToApp</string>
   <string name="webtoapp_header_title">Transform Websites into Apps</string>
-  <string name="webtoapp_header_description">Create standalone Android apps from any website in seconds. No coding required!</string>
+  <string name="webtoapp_header_description">Create standalone Android apps from any website with rich customization. No coding required!</string>
+
+  <!-- WebToApp - Basic Info -->
+  <string name="webtoapp_section_basic">Basic Info</string>
   <string name="webtoapp_app_icon">App Icon</string>
   <string name="webtoapp_tap_to_select_icon">Tap to select an icon</string>
   <string name="webtoapp_app_details">App Details</string>
@@ -609,21 +612,207 @@
   <string name="webtoapp_app_name_hint">Enter app name</string>
   <string name="webtoapp_website_url">Website URL</string>
   <string name="webtoapp_website_url_hint">https://example.com</string>
-  <string name="webtoapp_settings">Settings</string>
-  <string name="webtoapp_enable_javascript">Enable JavaScript</string>
-  <string name="webtoapp_enable_javascript_desc">Allow JavaScript execution in web pages</string>
-  <string name="webtoapp_enable_adblock">Enable Ad Blocking</string>
-  <string name="webtoapp_enable_adblock_desc">Block ads and popups in web pages</string>
+  <string name="webtoapp_package_name">Package Name</string>
+  <string name="webtoapp_package_name_hint">com.example.myapp</string>
+  <string name="webtoapp_version">Version</string>
+
+  <!-- WebToApp - Display Settings -->
+  <string name="webtoapp_section_display">Display &amp; Appearance</string>
+  <string name="webtoapp_enable_fullscreen">Fullscreen Mode</string>
+  <string name="webtoapp_enable_fullscreen_desc">Hide status bar and navigation</string>
   <string name="webtoapp_enable_desktop_mode">Desktop Mode</string>
   <string name="webtoapp_enable_desktop_mode_desc">Request desktop version of websites</string>
   <string name="webtoapp_enable_dark_mode">Force Dark Mode</string>
   <string name="webtoapp_enable_dark_mode_desc">Apply dark theme to web pages</string>
-  <string name="webtoapp_enable_fullscreen">Fullscreen Mode</string>
-  <string name="webtoapp_enable_fullscreen_desc">Hide status bar and navigation</string>
+  <string name="webtoapp_screen_orientation">Screen Orientation</string>
+  <string name="webtoapp_keep_screen_on">Keep Screen On</string>
+  <string name="webtoapp_keep_screen_on_desc">Prevent screen from turning off</string>
+  <string name="webtoapp_immersive_mode">Immersive Mode</string>
+  <string name="webtoapp_immersive_mode_desc">Full immersive display experience</string>
+
+  <!-- WebToApp - WebView Settings -->
+  <string name="webtoapp_section_webview">WebView Settings</string>
+  <string name="webtoapp_enable_javascript">Enable JavaScript</string>
+  <string name="webtoapp_enable_javascript_desc">Allow JavaScript execution in web pages</string>
+  <string name="webtoapp_enable_dom_storage">Enable DOM Storage</string>
+  <string name="webtoapp_enable_dom_storage_desc">Allow local storage and session storage</string>
+  <string name="webtoapp_enable_file_access">Enable File Access</string>
+  <string name="webtoapp_enable_file_access_desc">Allow access to local files</string>
+  <string name="webtoapp_enable_geolocation">Enable Geolocation</string>
+  <string name="webtoapp_enable_geolocation_desc">Allow location access for web pages</string>
+  <string name="webtoapp_enable_zoom">Enable Zoom</string>
+  <string name="webtoapp_enable_zoom_desc">Allow pinch to zoom on web pages</string>
+
+  <!-- WebToApp - Privacy & Security -->
+  <string name="webtoapp_section_privacy">Privacy &amp; Security</string>
+  <string name="webtoapp_enable_adblock">Enable Ad Blocking</string>
+  <string name="webtoapp_enable_adblock_desc">Block ads and popups in web pages</string>
+  <string name="webtoapp_enable_popup_block">Block Popups</string>
+  <string name="webtoapp_enable_popup_block_desc">Prevent popup windows from opening</string>
+  <string name="webtoapp_enable_anti_tracking">Anti-Tracking</string>
+  <string name="webtoapp_enable_anti_tracking_desc">Block trackers and analytics</string>
+  <string name="webtoapp_enable_fingerprint_spoofing">Fingerprint Spoofing</string>
+  <string name="webtoapp_enable_fingerprint_spoofing_desc">Prevent browser fingerprinting</string>
+  <string name="webtoapp_enable_cookie_manager">Cookie Manager</string>
+  <string name="webtoapp_enable_cookie_manager_desc">Manage website cookies</string>
+  <string name="webtoapp_third_party_cookies">Third-Party Cookies</string>
+  <string name="webtoapp_third_party_cookies_desc">Allow cookies from other domains</string>
+  <string name="webtoapp_clear_cache_on_exit">Clear Cache on Exit</string>
+  <string name="webtoapp_clear_cache_on_exit_desc">Delete cached data when app closes</string>
+  <string name="webtoapp_clear_cookies_on_exit">Clear Cookies on Exit</string>
+  <string name="webtoapp_clear_cookies_on_exit_desc">Delete cookies when app closes</string>
+  <string name="webtoapp_incognito_mode">Incognito Mode</string>
+  <string name="webtoapp_incognito_mode_desc">Don\'t save browsing history</string>
+
+  <!-- WebToApp - User Agent -->
+  <string name="webtoapp_section_useragent">User Agent</string>
+  <string name="webtoapp_user_agent">User Agent</string>
+  <string name="webtoapp_user_agent_default">Default</string>
+  <string name="webtoapp_user_agent_desktop_chrome">Desktop Chrome</string>
+  <string name="webtoapp_user_agent_desktop_firefox">Desktop Firefox</string>
+  <string name="webtoapp_user_agent_desktop_safari">Desktop Safari</string>
+  <string name="webtoapp_user_agent_mobile_chrome">Mobile Chrome</string>
+  <string name="webtoapp_user_agent_mobile_safari">Mobile Safari</string>
+  <string name="webtoapp_user_agent_tablet">Tablet</string>
+  <string name="webtoapp_user_agent_custom">Custom</string>
+  <string name="webtoapp_custom_user_agent">Custom User Agent</string>
+  <string name="webtoapp_custom_user_agent_hint">Enter custom user agent string</string>
+
+  <!-- WebToApp - Navigation -->
+  <string name="webtoapp_section_navigation">Navigation &amp; Behavior</string>
+  <string name="webtoapp_pull_to_refresh">Pull to Refresh</string>
+  <string name="webtoapp_pull_to_refresh_desc">Enable swipe down to refresh</string>
+  <string name="webtoapp_swipe_navigation">Swipe Navigation</string>
+  <string name="webtoapp_swipe_navigation_desc">Swipe left/right to go back/forward</string>
+  <string name="webtoapp_back_button_exit">Back Button Exit</string>
+  <string name="webtoapp_back_button_exit_desc">Exit app when pressing back on homepage</string>
+  <string name="webtoapp_confirm_exit">Confirm Exit</string>
+  <string name="webtoapp_confirm_exit_desc">Show confirmation dialog before exit</string>
+  <string name="webtoapp_external_links">Open External Links in Browser</string>
+  <string name="webtoapp_external_links_desc">Open links outside domain in browser</string>
+
+  <!-- WebToApp - Media -->
+  <string name="webtoapp_section_media">Download &amp; Media</string>
+  <string name="webtoapp_enable_downloads">Enable Downloads</string>
+  <string name="webtoapp_enable_downloads_desc">Allow file downloads from web pages</string>
+  <string name="webtoapp_enable_media_playback">Enable Media Playback</string>
+  <string name="webtoapp_enable_media_playback_desc">Allow audio and video playback</string>
+  <string name="webtoapp_video_fullscreen">Video Fullscreen</string>
+  <string name="webtoapp_video_fullscreen_desc">Allow videos to play in fullscreen</string>
+  <string name="webtoapp_mute_audio">Mute Audio</string>
+  <string name="webtoapp_mute_audio_desc">Disable all audio by default</string>
+  <string name="webtoapp_autoplay_media">Autoplay Media</string>
+  <string name="webtoapp_autoplay_media_desc">Automatically play videos and audio</string>
+
+  <!-- WebToApp - Splash Screen -->
+  <string name="webtoapp_section_splash">Splash Screen</string>
+  <string name="webtoapp_enable_splash">Enable Splash Screen</string>
+  <string name="webtoapp_enable_splash_desc">Show splash image when app starts</string>
+  <string name="webtoapp_splash_image">Splash Image</string>
+  <string name="webtoapp_splash_duration">Splash Duration (ms)</string>
+  <string name="webtoapp_splash_background">Background Color</string>
+  <string name="webtoapp_tap_to_select_splash">Tap to select splash image</string>
+
+  <!-- WebToApp - Background Music -->
+  <string name="webtoapp_section_bgm">Background Music</string>
+  <string name="webtoapp_enable_bgm">Enable Background Music</string>
+  <string name="webtoapp_enable_bgm_desc">Play background music in app</string>
+  <string name="webtoapp_bgm_file">Music File</string>
+  <string name="webtoapp_bgm_volume">Volume</string>
+  <string name="webtoapp_bgm_loop">Loop Music</string>
+  <string name="webtoapp_bgm_loop_desc">Repeat music when finished</string>
+  <string name="webtoapp_bgm_autoplay">Auto Play</string>
+  <string name="webtoapp_bgm_autoplay_desc">Start playing when app opens</string>
+  <string name="webtoapp_tap_to_select_bgm">Tap to select music file</string>
+
+  <!-- WebToApp - Activation Code -->
+  <string name="webtoapp_section_activation">Activation Code</string>
+  <string name="webtoapp_enable_activation">Enable Activation</string>
+  <string name="webtoapp_enable_activation_desc">Require activation code to use app</string>
+  <string name="webtoapp_activation_code">Activation Code</string>
+  <string name="webtoapp_activation_code_hint">Enter activation code</string>
+  <string name="webtoapp_activation_message">Activation Message</string>
+  <string name="webtoapp_activation_message_hint">Message shown to users</string>
+
+  <!-- WebToApp - Announcement -->
+  <string name="webtoapp_section_announcement">Announcement</string>
+  <string name="webtoapp_enable_announcement">Enable Announcement</string>
+  <string name="webtoapp_enable_announcement_desc">Show announcement when app opens</string>
+  <string name="webtoapp_announcement_title">Title</string>
+  <string name="webtoapp_announcement_title_hint">Announcement title</string>
+  <string name="webtoapp_announcement_content">Content</string>
+  <string name="webtoapp_announcement_content_hint">Announcement message</string>
+  <string name="webtoapp_announcement_button">Button Text</string>
+  <string name="webtoapp_announcement_url">Link URL (optional)</string>
+  <string name="webtoapp_announcement_template">Template Style</string>
+  <string name="webtoapp_show_once">Show Only Once</string>
+  <string name="webtoapp_show_once_desc">Don\'t show again after first view</string>
+
+  <!-- WebToApp - Auto Start -->
+  <string name="webtoapp_section_autostart">Auto Start</string>
+  <string name="webtoapp_enable_autostart">Enable Auto Start</string>
+  <string name="webtoapp_enable_autostart_desc">Start app when device boots</string>
+  <string name="webtoapp_enable_scheduled">Enable Scheduled Start</string>
+  <string name="webtoapp_enable_scheduled_desc">Start app at specific times</string>
+  <string name="webtoapp_scheduled_start">Start Time</string>
+  <string name="webtoapp_scheduled_end">End Time</string>
+
+  <!-- WebToApp - Forced Run -->
+  <string name="webtoapp_section_forced">Forced Run Mode</string>
+  <string name="webtoapp_enable_forced">Enable Forced Run</string>
+  <string name="webtoapp_enable_forced_desc">Prevent app from being closed</string>
+  <string name="webtoapp_block_back">Block Back Button</string>
+  <string name="webtoapp_block_back_desc">Disable back button</string>
+  <string name="webtoapp_block_home">Block Home Button</string>
+  <string name="webtoapp_block_home_desc">Disable home button (requires Device Admin)</string>
+  <string name="webtoapp_block_recent">Block Recent Apps</string>
+  <string name="webtoapp_block_recent_desc">Disable recent apps button</string>
+  <string name="webtoapp_forced_duration">Duration (minutes)</string>
+  <string name="webtoapp_forced_duration_desc">0 = unlimited</string>
+
+  <!-- WebToApp - Extensions -->
+  <string name="webtoapp_section_extensions">Extension Modules</string>
+  <string name="webtoapp_extensions_desc">Inject custom scripts like Tampermonkey</string>
+  <string name="webtoapp_builtin_extensions">Built-in Modules</string>
+  <string name="webtoapp_custom_javascript">Custom JavaScript</string>
+  <string name="webtoapp_custom_javascript_hint">Enter custom JavaScript code</string>
+  <string name="webtoapp_custom_css">Custom CSS</string>
+  <string name="webtoapp_custom_css_hint">Enter custom CSS styles</string>
+  <string name="webtoapp_inject_at_start">Inject at Page Start</string>
+  <string name="webtoapp_inject_at_start_desc">Run scripts when page starts loading</string>
+
+  <!-- WebToApp - Extension Module Names -->
+  <string name="webtoapp_ext_video_downloader">Video Downloader</string>
+  <string name="webtoapp_ext_dark_mode">Dark Mode</string>
+  <string name="webtoapp_ext_privacy_protection">Privacy Protection</string>
+  <string name="webtoapp_ext_ad_blocker">Ad Blocker</string>
+  <string name="webtoapp_ext_video_enhancer">Video Enhancer</string>
+  <string name="webtoapp_ext_content_enhancer">Content Enhancer</string>
+  <string name="webtoapp_ext_element_blocker">Element Blocker</string>
+  <string name="webtoapp_ext_web_analyzer">Web Analyzer</string>
+  <string name="webtoapp_ext_auto_scroll">Auto Scroll</string>
+  <string name="webtoapp_ext_screenshot">Screenshot</string>
+
+  <!-- WebToApp - Advanced -->
+  <string name="webtoapp_section_advanced">Advanced Settings</string>
+  <string name="webtoapp_enable_isolation">Browser Isolation</string>
+  <string name="webtoapp_enable_isolation_desc">Independent cookies and storage</string>
+  <string name="webtoapp_enable_encryption">APK Encryption</string>
+  <string name="webtoapp_enable_encryption_desc">Encrypt config and assets</string>
+  <string name="webtoapp_enable_translate">Auto Translate</string>
+  <string name="webtoapp_enable_translate_desc">Automatically translate web pages</string>
+  <string name="webtoapp_translate_language">Target Language</string>
+
+  <!-- WebToApp - Settings -->
+  <string name="webtoapp_settings">Settings</string>
+  <string name="webtoapp_settings_more">More Settings</string>
+  <string name="webtoapp_settings_collapse">Collapse</string>
+
+  <!-- WebToApp - Build -->
   <string name="webtoapp_create_app">Create App</string>
   <string name="webtoapp_preparing">Preparing…</string>
   <string name="webtoapp_building">Building your app…</string>
   <string name="webtoapp_success">App Created Successfully!</string>
-  <string name="webtoapp_success_description">Your web app has been created and saved.</string>
+  <string name="webtoapp_success_description">Your web app has been created and saved with all configured features.</string>
   <string name="webtoapp_error">Build Failed</string>
 </resources>
