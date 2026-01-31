@@ -42,7 +42,7 @@ data class SelfUpdate(
     val timestamp: Long = 0L
 ) {
     companion object {
-        private const val BASE_URL = "https://gitlab.com/AuroraOSS/AuroraStore/-/raw/master"
+        private const val BASE_URL = "https://raw.githubusercontent.com/GloriousTR/OmniAPK/main"
 
         fun toApp(selfUpdate: SelfUpdate, context: Context): App {
             // Keep paths updated with fastlane data on project

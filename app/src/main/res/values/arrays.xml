@@ -72,10 +72,10 @@
 
     <string-array name="link_urls">
         <item>https://auroraoss.com/</item>
-        <item>https://gitlab.com/AuroraOSS/AuroraStore/-/wikis/home</item>
+        <item>https://github.com/GloriousTR/OmniAPK/wiki</item>
         <item>"https://xdaforums.com/t/app-5-0-aurora-store-open-source-google-play-client.3739733/"</item>
         <item>"https://t.me/AuroraSupport"</item>
-        <item>"https://gitlab.com/AuroraOSS/AuroraStore"</item>
+        <item>"https://github.com/GloriousTR/OmniAPK"</item>
         <item>"https://f-droid.org/packages/com.aurora.store/"</item>
         <item>"bc1qu7cy9fepjj309y4r2x3rymve7mw4ff39c8cpe0"</item>
         <item>"qpqus3qdlz8guf476vwz0fjl8s34fseukcmrl6eknl"</item>
